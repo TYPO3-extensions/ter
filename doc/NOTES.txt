@@ -1,0 +1,4 @@
+
+registerExtensionKey in terfe_pi2 causes the following error - why?:
+
+	PHP Warning:  SoapClient::__doRequest() [<a href='function.--doRequest'>function.--doRequest</a>]: 349 bytes of buffered data lost during stream conversion! in /var/www/sites/typo3.org/typo3conf/ext/ter_fe/pi2/class.tx_terfe_pi2.php on line 198
