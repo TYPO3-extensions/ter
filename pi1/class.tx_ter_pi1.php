@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2005 Robert Lemke (robert@typo3.org)
+*  (c) 2005-2006 Robert Lemke (robert@typo3.org)
 *  All rights reserved
 *
 *  This script is part of the TYPO3 project. The TYPO3 project is
@@ -44,16 +44,17 @@ class tx_ter_pi1 extends tslib_pibase {
 	public $cObj;											// Standard cObj (parent)
 	public $extensionsPID;									// Start page for extension records
 	public $repositoryDir;									// Absolute path to extension repository directory
+	public $conf;											// The FE Plugin's TS configuration
 	
 	function main ($content, $conf) {
 		global $TSFE;
 
 		$this->pi_initPIflexForm();
+		$this->conf = $conf;
 
 		$this->extensionsPID = $conf['pid'];
 		$this->repositoryDir = $conf['repositoryDir'];
-	
-		
+			
 		$server = new SoapServer(NULL, array ('uri' => 'http://typo3.org/soap/tx_ter'));
 		$server->setClass ('tx_ter_api', $this);
 		$server->handle($GLOBALS['HTTP_RAW_POST_DATA']);

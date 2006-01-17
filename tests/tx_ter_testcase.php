@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2005 Robert Lemke (robert@typo3.org)
+*  (c) 2005-2006 Robert Lemke (robert@typo3.org)
 *  All rights reserved
 *
 *  This script is part of the TYPO3 project. The TYPO3 project is
@@ -33,6 +33,9 @@
  *    - Although the tx_ter_api takes the PID of extension keys and
  *      extensions into account, these tests don't. Just make sure that
  *      only one repository exists in your site database.
+ * 
+ * 	  - The script tx_ter_wsdl.php must be accsible via 
+ *      TYPO3_SITE_URL/wsdl/tx_ter_wsdl.php
  *
  * @author	Robert Lemke <robert@typo3.org>
  */
@@ -46,13 +49,9 @@ class tx_ter_testcase extends tx_t3unit_testcase {
 	public function __construct ($name) {
 		parent::__construct ($name);
 
-		$this->WSDLURI = t3lib_div::getIndpEnv('TYPO3_SITE_URL').t3lib_extMgm::siteRelPath('ter').'tx_ter.wsdl';
+		$this->WSDLURI = t3lib_div::getIndpEnv('TYPO3_SITE_URL').'wsdl/tx_ter_wsdl.php';
 		$this->SOAPServiceURI = t3lib_div::getIndpEnv('TYPO3_SITE_URL').'index.php?id=ter';
 	}
-
-
-
-
 
 	/*********************************************************
 	 *
@@ -672,6 +671,240 @@ class tx_ter_testcase extends tx_t3unit_testcase {
 		);
 		
 		self::assertTrue ($extensionKeysRowCheck, 'Row of table "tx_ter_extensionkeys" did not contain the modified extension key data!');
+	}
+
+
+
+
+
+	/*********************************************************
+	 *
+	 * SET REVIEW STATE TESTS
+	 *
+	 * The following tests check the function for setting the 
+	 * review state of an extensions.
+	 *
+	 * Note: This test requires a valid FE user "t3unit" with 
+	 *       password "t3unitpassword" and a second account
+	 *       "t3unit-2" with the same password.
+	 *       The second account must be in a group which has 
+	 *       the right to set review states, the first one 
+	 *       mustn't!
+	 *
+	 *********************************************************/
+
+	public function test_setReviewState_all () {
+		global $TYPO3_DB;
+
+		$soapClientObj = new SoapClient ($this->WSDLURI, array ('trace' => 1, 'exceptions' => 1));
+
+			// First upload an extension as a fixture:
+		$this->createFixture_uploadExtension (&$accountData, &$extensionData, &$filesData);
+		$soapClientObj = new SoapClient ($this->WSDLURI, array ('trace' => 1, 'exceptions' => 1));
+
+		try {
+			$result = $soapClientObj->uploadExtension (
+				$accountData,
+				$extensionData,
+				$filesData
+			);
+		} catch (SoapFault $exception) {
+			self::fail ('SoapFault Exception (#'.$exception->faultcode.'): '.$exception->faultstring);
+		}	
+		self::assertTrue (is_array ($result) && ($result['resultCode'] == 10504), 'Upload of extension was not successful (result: '.$result['resultCode'].')');
+
+			// Now try to set the review state (must result in "access denied"):
+		$accountData = array(
+			'username' => 't3unit',
+			'password' => 't3unitpassword'
+		);
+		
+		$setReviewStateData = array (
+			'extensionKey' => $extensionData['extensionKey'],
+			'version' => $result['version'],
+			'reviewState' => 1
+		);
+		
+		try {
+			$resultArr = $soapClientObj->setReviewState ($accountData, $setReviewStateData);
+			self::fail ('Setting review state should throw an exception but it didn\'t!');
+		} catch (SoapFault $exception) {
+		}
+		
+		self::assertTrue ($exception->faultcode == 701, 'Setting review state with invalid user did throw an exception but with the wrong fault code ('.$exception->faultcode.' '.$exception->faultstring.')');
+
+			// Try again with user who belongs to the reviewers usergroup but with a non-existing extension:
+		$accountData = array(
+			'username' => 't3unit-2',
+			'password' => 't3unitpassword'
+		);
+		
+		$setReviewStateData = array (
+			'extensionKey' => '_thisextensionsurelydoesntexist',
+			'version' => '1.0.0',
+			'reviewState' => 1
+		);
+		
+		try {
+			$resultArr = $soapClientObj->setReviewState ($accountData, $setReviewStateData);
+			self::fail ('Setting review state should throw an exception but it didn\'t!');
+		} catch (SoapFault $exception) {
+		}
+
+		self::assertTrue ($exception->faultcode == 702, 'Setting review state for non-existing extension version did throw an exception but with the wrong fault code ('.$exception->faultcode.')');
+
+			// Try again with user who belongs to the reviewers usergroup:
+		$accountData = array(
+			'username' => 't3unit-2',
+			'password' => 't3unitpassword'
+		);
+		
+		$setReviewStateData = array (
+			'extensionKey' => $extensionData['extensionKey'],
+			'version' => $result['version'],
+			'reviewState' => 1
+		);
+		
+		try {
+			$resultArr = $soapClientObj->setReviewState ($accountData, $setReviewStateData);
+		} catch (SoapFault $exception) {
+			self::fail ('SoapFault Exception (#'.$exception->faultcode.'): '.$exception->faultstring);
+		}
+
+		self::assertTrue (is_array ($resultArr) && ($resultArr['resultCode'] == 10000), 'Setting review state was not successful (result: '.$resultArr['resultCode'].')');
+		
+			// Check if the state really has been changed in the database:
+
+		$res = $TYPO3_DB->exec_SELECTquery (
+			'reviewstate',
+			'tx_ter_extensions',
+			'extensionkey ="'.$TYPO3_DB->quoteStr($extensionData['extensionKey'], 'tx_ter_extensions').'" AND '.
+				'version ="'.$TYPO3_DB->quoteStr($result['version'], 'tx_ter_extensions').'"'
+		);
+		if (!$res) self::fail ('No MySQL result while checking if extension review state was correctly modified in the DB');
+		
+		$row = $TYPO3_DB->sql_fetch_assoc ($res);
+		
+		self::assertEquals((integer)$row['reviewstate'], 1, 'The review state found in the database record is not like expected!');
+		
+	}
+
+
+
+
+
+	/*********************************************************
+	 *
+	 * INCREASE EXTENSION DOWNLOAD COUNTER TESTS
+	 *
+	 * The following tests check the function for increasing  
+	 * the download counter of an extension version.
+	 *
+	 * Note: This test requires a valid FE user "t3unit" with 
+	 *       password "t3unitpassword" and a second account
+	 *       "t3unit-2" with the same password.
+	 *       The second account must be in a group which has 
+	 *       the right to increase download counters, the first 
+	 *       one mustn't!
+	 *
+	 *********************************************************/
+
+	public function test_incremendExtensionDownloadCounter_all () {
+		global $TYPO3_DB;
+
+		$soapClientObj = new SoapClient ($this->WSDLURI, array ('trace' => 1, 'exceptions' => 1));
+
+			// First upload an extension as a fixture:
+		$this->createFixture_uploadExtension (&$accountData, &$extensionData, &$filesData);
+		$soapClientObj = new SoapClient ($this->WSDLURI, array ('trace' => 1, 'exceptions' => 1));
+
+		try {
+			$result = $soapClientObj->uploadExtension (
+				$accountData,
+				$extensionData,
+				$filesData
+			);
+		} catch (SoapFault $exception) {
+			self::fail ('SoapFault Exception (#'.$exception->faultcode.'): '.$exception->faultstring);
+		}	
+		self::assertTrue (is_array ($result) && ($result['resultCode'] == 10504), 'Upload of extension was not successful (result: '.$result['resultCode'].')');
+
+		$extensionVersionData = array (
+			'extensionKey' => $extensionData['extensionKey'],
+			'version' => $result['version'],
+		);
+				
+			// Save the total downloads counter of the extension key:
+		$res = $TYPO3_DB->exec_SELECTquery (
+			'downloadcounter',
+			'tx_ter_extensionkeys',
+			'extensionkey ="'.$TYPO3_DB->quoteStr($extensionVersionData['extensionKey'], 'tx_ter_extensions').'"'
+		);
+		if (!$res) self::fail ('No MySQL result while checking if extension download counter was correctly increased in the DB');
+		$totalCounterRow = $TYPO3_DB->sql_fetch_assoc ($res);
+		$totalCounter = $totalCounterRow['downloadcounter'];
+
+			// Now try to increase the download counter (must result in "access denied"):
+		$accountData = array(
+			'username' => 't3unit',
+			'password' => 't3unitpassword'
+		);
+		
+		try {
+			$resultArr = $soapClientObj->increaseExtensionDownloadCounter ($accountData, $extensionVersionData, 5);
+			self::fail ('increasing the extension download counter should throw an exception but it didn\'t!');
+		} catch (SoapFault $exception) {
+		}
+		
+		self::assertTrue ($exception->faultcode == 801, 'increasing download counter with invalid user did throw an exception but with the wrong fault code ('.$exception->faultcode.' '.$exception->faultstring.')');
+
+			// Try again (twice) with user who belongs to the correct usergroup:
+		$accountData = array(
+			'username' => 't3unit-2',
+			'password' => 't3unitpassword'
+		);
+		
+		try {
+			$resultArr = $soapClientObj->increaseExtensionDownloadCounter ($accountData, $extensionVersionData, 5);
+			$resultArr = $soapClientObj->increaseExtensionDownloadCounter ($accountData, $extensionVersionData, 15);
+		} catch (SoapFault $exception) {
+			self::fail ('SoapFault Exception (#'.$exception->faultcode.'): '.$exception->faultstring);
+		}
+
+		self::assertTrue (is_array ($resultArr) && ($resultArr['resultCode'] == 10000), 'increasing download counter was not successful (result: '.$resultArr['resultCode'].')');
+
+			// Try again with negative incrementor
+		try {
+			$resultArr = $soapClientObj->increaseExtensionDownloadCounter ($accountData, $extensionVersionData, -3);
+			self::fail ('increasing the extension download counter should throw an exception but it didn\'t!');
+		} catch (SoapFault $exception) {
+		}
+
+		self::assertTrue (is_array ($resultArr) && ($resultArr['resultCode'] == 10000), 'increasing download counter was not successful (result: '.$resultArr['resultCode'].')');
+		
+			// Check if the counter really has been changed in the database:
+		$res = $TYPO3_DB->exec_SELECTquery (
+			'downloadcounter',
+			'tx_ter_extensions',
+			'extensionkey ="'.$TYPO3_DB->quoteStr($extensionVersionData['extensionKey'], 'tx_ter_extensions').'" AND '.
+				'version ="'.$TYPO3_DB->quoteStr($extensionVersionData['version'], 'tx_ter_extensions').'"'
+		);
+		if (!$res) self::fail ('No MySQL result while checking if extension download counter was correctly increased in the DB');
+		
+		$row = $TYPO3_DB->sql_fetch_assoc ($res);
+		
+		self::assertEquals((integer)$row['downloadcounter'], 20, 'The download counter found in the database record is not like expected!');
+
+		$res = $TYPO3_DB->exec_SELECTquery (
+			'downloadcounter',
+			'tx_ter_extensionkeys',
+			'extensionkey ="'.$TYPO3_DB->quoteStr($extensionVersionData['extensionKey'], 'tx_ter_extensions').'"'
+		);
+		if (!$res) self::fail ('No MySQL result while checking if extension download counter was correctly increased in the DB');
+		
+		$row = $TYPO3_DB->sql_fetch_assoc ($res);
+		
+		self::assertEquals((integer)$row['downloadcounter'], ($totalCounter+20), 'The total downloads counter found in the database record is not like expected!');
 	}
 
 

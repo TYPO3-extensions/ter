@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2005 Robert Lemke (robert@typo3.org)
+*  (c) 2005-2006 Robert Lemke (robert@typo3.org)
 *  All rights reserved
 *
 *  This script is part of the TYPO3 project. The TYPO3 project is
@@ -58,6 +58,16 @@ define (TX_TER_ERROR_MODIFYEXTENSIONKEY_ACCESSDENIED, '600');
 define (TX_TER_ERROR_MODIFYEXTENSIONKEY_SETTINGTOTHISOWNERISNOTPOSSIBLE, '601');
 define (TX_TER_ERROR_MODIFYEXTENSIONKEY_KEYDOESNOTEXIST, '602');
 
+define (TX_TER_ERROR_SETREVIEWSTATE_NOUSERGROUPDEFINED, '700');
+define (TX_TER_ERROR_SETREVIEWSTATE_ACCESSDENIED, '701');
+define (TX_TER_ERROR_SETREVIEWSTATE_EXTENSIONVERSIONDOESNOTEXIST, '702');
+
+define (TX_TER_ERROR_INCREASEEXTENSIONDOWNLOADCOUNTER_NOUSERGROUPDEFINED, '800');
+define (TX_TER_ERROR_INCREASEEXTENSIONDOWNLOADCOUNTER_ACCESSDENIED, '801');
+define (TX_TER_ERROR_INCREASEEXTENSIONDOWNLOADCOUNTER_EXTENSIONVERSIONDOESNOTEXIST, '802');
+define (TX_TER_ERROR_INCREASEEXTENSIONDOWNLOADCOUNTER_INCREMENTORNOTPOSITIVEINTEGER, '803');
+define (TX_TER_ERROR_INCREASEEXTENSIONDOWNLOADCOUNTER_EXTENSIONKEYDOESNOTEXIST, '804');
+
 	// Result codes: 
 define (TX_TER_RESULT_GENERAL_OK, '10000');
 	
@@ -102,7 +112,7 @@ class tx_ter_helper {
 	public function getValidUser ($accountData)	{
 		global $TYPO3_DB, $TSFE;
 		
-		if (!strlen($accountData->username) || (!strlen($accountData->password) && $ignorePassword == FALSE)) {
+		if (!strlen($accountData->username) || (!strlen($accountData->password))) {
 			throw new SoapFault (TX_TER_ERROR_GENERAL_NOUSERORPASSWORD, 'No user or no password submitted.');
 		}
 
@@ -113,7 +123,7 @@ class tx_ter_helper {
 		);		
 		
 		if ($row = $TYPO3_DB->sql_fetch_assoc($res)) {
-			if ($ignorePassword == FALSE && $row['password'] != $accountData->password) {
+			if ($row['password'] != $accountData->password) {
 				throw new SoapFault (TX_TER_ERROR_GENERAL_WRONGPASSWORD, 'Wrong password.');
 			}
 		} else {
@@ -163,7 +173,7 @@ class tx_ter_helper {
 		$res = $TYPO3_DB->exec_SELECTquery (
 			'version',
 			'tx_ter_extensions',
-			'extensionkey="'.$TYPO3_DB->quoteStr($extensionKey, 'tx_ter_extensionkeys').'"
+			'extensionkey="'.$TYPO3_DB->quoteStr($extensionKey, 'tx_ter_extensions').'"
 				AND pid='.intval($this->pluginObj->extensionsPID)
 		);
 		$latestVersion = FALSE;
@@ -191,21 +201,23 @@ class tx_ter_helper {
 		$trackTime = microtime();
 
 		$res = $TYPO3_DB->exec_SELECTquery(
-			'uid,tstamp,extensionkey,version,title,description,state,category,t3xfilemd5',
+			'uid,tstamp,extensionkey,version,title,description,state,reviewstate,category,downloadcounter,t3xfilemd5',
 			'tx_ter_extensions',
 			'1'
 		);
 		
 			// Read the extension records from the DB:
 		$extensionsAndVersionsArr = array();
+		$extensionsTotalDownloadsArr = array();
 		while ($row = $TYPO3_DB->sql_fetch_assoc($res)) {
 			$res2 = $TYPO3_DB->exec_SELECTquery(
-				'ownerusername',
+				'ownerusername,downloadcounter',
 				'tx_ter_extensionkeys',
 				'extensionkey="'.$row['extensionkey'].'"'
 			);
 			$extensionKeyRow = $TYPO3_DB->sql_fetch_assoc($res2);
 			$row['ownerusername'] = $extensionKeyRow['ownerusername'];
+			$extensionsTotalDownloadsArr[$row['extensionkey']] = $extensionKeyRow['downloadcounter'];
 
 			$res2 = $TYPO3_DB->exec_SELECTquery(
 				'lastuploaddate,uploadcomment,dependencies,authorname,authoremail,authorcompany',
@@ -227,7 +239,8 @@ class tx_ter_helper {
 			// Create the nested XML structure:
 		foreach ($extensionsAndVersionsArr as $extensionKey => $extensionVersionsArr) {
 			$extensionObj = $extensionsObj->appendChild (new DOMElement('extension'));
-			$extensionObj->appendChild (new DOMAttr ('extensionKey', $extensionKey));
+			$extensionObj->appendChild (new DOMAttr ('extensionkey', $extensionKey));
+			$extensionObj->appendChild (new DOMElement ('downloadcounter', $this->xmlentities ($extensionsTotalDownloadsArr[$extensionKey])));
 			
 			foreach ($extensionVersionsArr as $versionNumber => $extensionVersionArr) {
 				$versionObj = $extensionObj->appendChild (new DOMElement('version'));
@@ -236,7 +249,9 @@ class tx_ter_helper {
 				$versionObj->appendChild (new DOMElement('title', $this->xmlentities ($extensionVersionArr['title'])));
 				$versionObj->appendChild (new DOMElement('description', $this->xmlentities ($extensionVersionArr['description'])));
 				$versionObj->appendChild (new DOMElement('state', $this->xmlentities ($extensionVersionArr['state'])));
+				$versionObj->appendChild (new DOMElement('reviewstate', $this->xmlentities ($extensionVersionArr['reviewstate'])));
 				$versionObj->appendChild (new DOMElement('category', $this->xmlentities ($extensionVersionArr['category'])));
+				$versionObj->appendChild (new DOMElement('downloadcounter', $this->xmlentities ($extensionVersionArr['downloadcounter'])));
 				$versionObj->appendChild (new DOMElement('lastuploaddate', $extensionVersionArr['lastuploaddate']));
 				$versionObj->appendChild (new DOMElement('uploadcomment', $this->xmlentities ($extensionVersionArr['uploadcomment'])));
 				$versionObj->appendChild (new DOMElement('dependencies', $extensionVersionArr['dependencies']));

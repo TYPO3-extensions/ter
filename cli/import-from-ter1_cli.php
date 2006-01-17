@@ -29,7 +29,7 @@ $extensionsPID = 1320;
 $res = $TYPO3_DB->exec_SELECTquery (
 	'*',
 	'tx_extrep_keytable',
-	'hidden=0 AND deleted=0 AND members_only=0',
+	'hidden=0 AND deleted=0',
 	'',
 	'extension_key ASC'
 );
@@ -50,27 +50,49 @@ while ($extensionKeyRow = $TYPO3_DB->sql_fetch_assoc ($res)) {
 
 	echo ('importing '.str_pad ($extensionKeyRow['extension_key'].' ('.$feUsersRow['username'].')', 40, ' '));
 
-	$res2 = $TYPO3_DB->exec_SELECTquery (
-		'*',
-		'tx_extrep_repository',
-		'extension_uid = '.$extensionKeyRow['uid']
-	);
+	if (intval($extensionKeyRow['members_only'])) {
 
-	$versionOfExtension = 1;
-	while ($extensionVersionRow = $TYPO3_DB->sql_fetch_assoc ($res2)) {
-		$extensionVersionCounter ++;
+		$newExtensionKeyRow = array (
+			'tstamp' => $extensionKeyRow['tstamp'],
+			'crdate' => $extensionKeyRow['crdate'],
+			'pid' => $GLOBALS['extensionsPID'],
+			'title' => $extensionKeyRow['title'],
+			'description' => $extensionKeyRow['description'],
+			'extensionkey' => $extensionKeyRow['extension_key'],
+			'ownerusername' => $accountData['username'],
+			'uploadpassword' => $extensionKeyRow['upload_password'],
+			'maxstoresize' => $extensionKeyRow['maxStoreSize'],
+	  		'downloadcounter' => $extensionKeyRow['download_counter']			
+		);		
 
-		echo (str_pad ($extensionVersionRow['version'], 7, ' '));
+		$TYPO3_DB->exec_INSERTquery (
+			'tx_ter_extensionkeys', 
+			$newExtensionKeyRow 
+		);
 
-		$filesData = unserialize (gzuncompress($extensionVersionRow['datablob']));			
-		$extensionData = getExtensionDataFromRepositoryRow($extensionKeyRow, $extensionVersionRow);
-				
-		if (is_array ($filesData)) {
-			writeExtensionAndIconFile ($extensionData, $filesData);
-			writeExtensionInfoToDB ($accountData, $extensionData, $filesData, $extensionVersionRow, $versionOfExtension);		
-			$versionOfExtension ++;
-		} else {
-			$extensionKeysWithProblems [] = $extensionKeyRow['extension_key'];	
+	} else {
+		$res2 = $TYPO3_DB->exec_SELECTquery (
+			'*',
+			'tx_extrep_repository',
+			'extension_uid = '.$extensionKeyRow['uid']
+		);
+	
+		$versionOfExtension = 1;
+		while ($extensionVersionRow = $TYPO3_DB->sql_fetch_assoc ($res2)) {
+			$extensionVersionCounter ++;
+	
+			echo (str_pad ($extensionVersionRow['version'], 7, ' '));
+	
+			$filesData = unserialize (gzuncompress($extensionVersionRow['datablob']));			
+			$extensionData = getExtensionDataFromRepositoryRow($extensionKeyRow, $extensionVersionRow);
+					
+			if (is_array ($filesData)) {
+				writeExtensionAndIconFile ($extensionData, $filesData);
+				writeExtensionInfoToDB ($accountData, $extensionData, $filesData, $extensionVersionRow, $versionOfExtension);		
+				$versionOfExtension ++;
+			} else {
+				$extensionKeysWithProblems [] = $extensionKeyRow['extension_key'];	
+			}
 		}
 	}
 	echo chr(10);

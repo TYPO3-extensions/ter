@@ -33,6 +33,7 @@ CREATE TABLE tx_ter_extensions (
   title varchar(50) DEFAULT '' NOT NULL,
   description varchar(255) DEFAULT '' NOT NULL,
   state varchar(15) DEFAULT '' NOT NULL,
+  reviewstate int(11) DEFAULT '0' NOT NULL,
   category varchar(30) DEFAULT '' NOT NULL,
   downloadcounter int(11) DEFAULT '0' NOT NULL,
   ismanualincluded int(11) DEFAULT '0' NOT NULL,

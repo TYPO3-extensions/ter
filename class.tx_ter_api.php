@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2005 Robert Lemke (robert@typo3.org)
+*  (c) 2005-2006 Robert Lemke (robert@typo3.org)
 *  All rights reserved
 *
 *  This script is part of the TYPO3 project. The TYPO3 project is
@@ -293,6 +293,63 @@ class tx_ter_api {
 
 		return array (
 			'resultCode' => $resultCode,
+			'resultMessages' => array()
+		);
+	}
+
+	/**
+	 * Sets the review state of an extension version
+	 * 
+	 * @param	object	$accountData: A valid username and password
+	 * @param	object	$setReviewStateData: The extension key, version number and the new review state (integer)  
+	 * @return	object	simpleResponse-object. A SoapFault exception is thrown if a fatal error ocurred.
+	 * @access	public 
+	 * @since	2.0.0
+	 */
+	public function setReviewState ($accountData, $setReviewStateData) {
+		global $TSFE, $TYPO3_DB;
+
+		$userRecordArr = $this->helperObj->getValidUser ($accountData);
+		$reviewersFrontendUsergroupUid = intval($this->parentObj->conf['reviewersFrontendUsergroupUid']); 
+
+		if ($reviewersFrontendUsergroupUid == 0) throw new SoapFault (TX_TER_ERROR_SETREVIEWSTATE_NOUSERGROUPDEFINED, 'Warning: No usergroup for reviewers has been defined on the server side. Aborting ...');
+		if (!t3lib_div::inList($userRecordArr['usergroup'], $reviewersFrontendUsergroupUid)) throw new SoapFault (TX_TER_ERROR_SETREVIEWSTATE_ACCESSDENIED, 'Access denied.');
+		
+		$this->setReviewState_writeNewStateIntoDB($setReviewStateData);
+		$this->helperObj->writeExtensionIndexFile ();
+
+		return array (
+			'resultCode' => TX_TER_RESULT_GENERAL_OK,
+			'resultMessages' => array()
+		);
+	}
+
+	/**
+	 * Increases the download counter of an extension version
+	 * 
+	 * @param	object	$accountData: A valid username and password
+	 * @param	object	$extensionVersionData: The extension key and version number
+	 * @param	integer	$incrementor: The number by which the counter shall be incremented  
+	 * @return	object	simpleResponse-object. A SoapFault exception is thrown if a fatal error ocurred.
+	 * @access	public 
+	 * @since	2.0.0
+	 */
+	public function increaseExtensionDownloadCounter ($accountData, $extensionVersionData, $incrementor) {
+		global $TSFE, $TYPO3_DB;
+
+		$userRecordArr = $this->helperObj->getValidUser ($accountData);
+		$mirrorsFrontendUsergroupUid = intval($this->parentObj->conf['mirrorsFrontendUsergroupUid']); 
+
+		if ($mirrorsFrontendUsergroupUid == 0) throw new SoapFault (TX_TER_ERROR_INCREASEEXTENSIONDOWNLOADCOUNTER_NOUSERGROUPDEFINED, 'Warning: No usergroup for mirrors has been defined on the server side. Aborting ...');
+		if (!t3lib_div::inList($userRecordArr['usergroup'], $mirrorsFrontendUsergroupUid)) throw new SoapFault (TX_TER_ERROR_INCREASEEXTENSIONDOWNLOADCOUNTER_ACCESSDENIED, 'Access denied.');
+		
+		if ((integer)$incrementor !== abs((integer)($incrementor))) throw new SoapFault (TX_TER_ERROR_INCREASEEXTENSIONDOWNLOADCOUNTER_INCREMENTORNOTPOSITIVEINTEGER, 'The incrementor must be a positive integer value.');
+		
+		$this->increaseExtensionDownloadCounter_increaseCounterInDB($extensionVersionData, $incrementor);
+		$this->helperObj->writeExtensionIndexFile ();
+
+		return array (
+			'resultCode' => TX_TER_RESULT_GENERAL_OK,
 			'resultMessages' => array()
 		);
 	}
@@ -717,6 +774,104 @@ class tx_ter_api {
 		return TX_TER_RESULT_GENERAL_OK;
 	}
 
+
+
+
+
+	/*********************************************************
+	 *
+	 * setReviewState helper functions
+	 *
+	 *********************************************************/
+
+	/**
+	 * Writes modified review state into the database
+	 *
+	 * @param	object	$setReviewStateData: Extension key, version number and the new state
+	 * @result	void
+	 * @access	protected
+	 */
+	protected function setReviewState_writeNewStateIntoDB ($setReviewStateData) {
+		global $TYPO3_DB, $TSFE;
+
+		$res = $TYPO3_DB->exec_SELECTquery (
+			'uid',
+			'tx_ter_extensions',
+			'extensionkey ="'.$TYPO3_DB->quoteStr($setReviewStateData->extensionKey, 'tx_ter_extensions').'" AND '.
+				'version ="'.$TYPO3_DB->quoteStr($setReviewStateData->version, 'tx_ter_extensions').'"'
+		);
+		if (!$res) throw new SoapFault (TX_TER_ERROR_GENERAL_DATABASEERROR, 'Database error while searching for extension record.');
+		if ($TYPO3_DB->sql_num_rows($res) != 1) throw new SoapFault (TX_TER_ERROR_SETREVIEWSTATE_EXTENSIONVERSIONDOESNOTEXIST, 'Extension version does not exist.');
+
+		$res = $TYPO3_DB->exec_UPDATEquery (
+			'tx_ter_extensions', 
+			'extensionkey ="'.$TYPO3_DB->quoteStr($setReviewStateData->extensionKey, 'tx_ter_extensions').'" AND '.
+				'version ="'.$TYPO3_DB->quoteStr($setReviewStateData->version, 'tx_ter_extensions').'"',
+			array('reviewstate' => intval($setReviewStateData->reviewState))
+		);
+		if (!$res) throw new SoapFault (TX_TER_ERROR_GENERAL_DATABASEERROR, 'Database error while updating extension review state.');
+	}
+
+
+
+
+
+	/*********************************************************
+	 *
+	 * increaseExtensionDownloadCounter helper functions
+	 *
+	 *********************************************************/
+
+	/**
+	 * Reads, increases and writes the download counter of an extension version
+	 * into the database.
+	 *
+	 * @param	object	$extensionVersionData: Extension key and version number
+	 * @param	object	$incrementor: Number by which the counter shall be increaseed
+	 * @result	void
+	 * @access	protected
+	 */
+	protected function increaseExtensionDownloadCounter_increaseCounterInDB ($extensionVersionData, $incrementor) {
+		global $TYPO3_DB, $TSFE;
+
+		$res = $TYPO3_DB->exec_SELECTquery (
+			'uid, downloadcounter',
+			'tx_ter_extensions',
+			'extensionkey ="'.$TYPO3_DB->quoteStr($extensionVersionData->extensionKey, 'tx_ter_extensions').'" AND '.
+				'version ="'.$TYPO3_DB->quoteStr($extensionVersionData->version, 'tx_ter_extensions').'"'
+		);
+		if (!$res) throw new SoapFault (TX_TER_ERROR_GENERAL_DATABASEERROR, 'Database error while searching for extension record.');
+		if ($TYPO3_DB->sql_num_rows($res) != 1) throw new SoapFault (TX_TER_ERROR_INCREASEEXTENSIONDOWNLOADCOUNTER_EXTENSIONVERSIONDOESNOTEXIST, 'Extension version does not exist.');
+
+		$currentRow = $TYPO3_DB->sql_fetch_assoc ($res);
+		$newCounter = intval($currentRow['downloadcounter']) + (integer)($incrementor);
+
+		$res = $TYPO3_DB->exec_UPDATEquery (
+			'tx_ter_extensions', 
+			'uid='.$currentRow['uid'],
+			array('downloadcounter' => $newCounter)
+		);
+		if (!$res) throw new SoapFault (TX_TER_ERROR_GENERAL_DATABASEERROR, 'Database error while updating extension download counter.');
+
+		$res = $TYPO3_DB->exec_SELECTquery (
+			'uid, downloadcounter',
+			'tx_ter_extensionkeys',
+			'extensionkey ="'.$TYPO3_DB->quoteStr($extensionVersionData->extensionKey, 'tx_ter_extensions').'"'
+		);
+		if (!$res) throw new SoapFault (TX_TER_ERROR_GENERAL_DATABASEERROR, 'Database error while searching for extension key record.');
+		if ($TYPO3_DB->sql_num_rows($res) != 1) throw new SoapFault (TX_TER_ERROR_INCREASEEXTENSIONDOWNLOADCOUNTER_EXTENSIONKEYDOESNOTEXIST, 'Extension key does not exist.');
+
+		$currentRow = $TYPO3_DB->sql_fetch_assoc ($res);
+		$newCounter = intval($currentRow['downloadcounter']) + (integer)($incrementor);
+
+		$res = $TYPO3_DB->exec_UPDATEquery (
+			'tx_ter_extensionkeys', 
+			'uid='.$currentRow['uid'],
+			array('downloadcounter' => $newCounter)
+		);
+		if (!$res) throw new SoapFault (TX_TER_ERROR_GENERAL_DATABASEERROR, 'Database error while updating extension total download counter.');
+	}
+	
 }
 
 ?>
