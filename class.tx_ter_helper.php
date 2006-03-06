@@ -40,13 +40,13 @@ define (TX_TER_ERROR_GENERAL_USERNOTFOUND, '102');
 define (TX_TER_ERROR_GENERAL_WRONGPASSWORD, '103');
 define (TX_TER_ERROR_GENERAL_DATABASEERROR, '104');
 
-define (TX_TER_ERROR_UPLOADEXTENSION_NOUPLOADPASSWORD, '200');
-define (TX_TER_ERROR_UPLOADEXTENSION_WRONGUPLOADPASSWORD, '201');
 define (TX_TER_ERROR_UPLOADEXTENSION_EXTENSIONDOESNTEXIST, '202');
 define (TX_TER_ERROR_UPLOADEXTENSION_EXTENSIONCONTAINSNOFILES, '203');
 define (TX_TER_ERROR_UPLOADEXTENSION_WRITEERRORWHILEWRITINGFILES, '204');
 define (TX_TER_ERROR_UPLOADEXTENSION_EXTENSIONTOOBIG, '205');
 define (TX_TER_ERROR_UPLOADEXTENSION_EXISTINGEXTENSIONRECORDNOTFOUND, '206');
+define (TX_TER_ERROR_UPLOADEXTENSION_FILEMD5DOESNOTMATCH, '207');
+define (TX_TER_ERROR_UPLOADEXTENSION_ACCESSDENIED, '208');
 
 define (TX_TER_ERROR_REGISTEREXTENSIONKEY_DBERRORWHILEINSERTINGKEY, '300');
 
@@ -87,7 +87,7 @@ define (TX_TER_RESULT_EXTENSIONSUCCESSFULLYUPLOADED, '10504');
  */
 class tx_ter_helper {
 	
-	protected $pluginObj;
+	protected	$pluginObj;
 
 	/**
 	 * Constructor
@@ -187,15 +187,35 @@ class tx_ter_helper {
 	}
 
 	/**
+	 * Sets a flag so the cron job knows that the extensions.xml.gz file has to be
+	 * regenerated. Call this whenever data has changed which also exists in 
+	 * extensions.xml.gz
+	 * 
+	 * Note: Depending on the cron job it might take a while until the index file really
+	 *       has been updated. See "cli/build-extension-index.php" for more information
+	 * 
+	 * @return	void
+	 * @access	public
+	 */
+	public function requestUpdateOfExtensionIndexFile() {
+		t3lib_div::writeFile (
+			$this->pluginObj->repositoryDir.'extensions.xml.gz.needsupdate',
+			'Dear cron-job. The extensions.xml.gz file needs to be regenerated, please do so as soon as you find the time for it.'.chr(10).
+			'Thanks, your TER helper class'
+		);
+	}
+
+	/**
 	 * Updates the "extensions.xml" file which contains an index of all uploaded
 	 * extensions in the TER.
 	 *
 	 * @return	void
 	 * @access	public 
 	 */
-	public function writeExtensionIndexfile ()	{
+	public function writeExtensionIndexfile()	{
 		global $TYPO3_DB;
 
+		t3lib_div::devLog	('writing extension index!', 'tx_ter_helper', 0);
 		if (!@is_dir ($this->pluginObj->repositoryDir)) throw new SoapFault (TX_TER_ERROR_GENERAL_EXTREPDIRDOESNTEXIST, 'Extension repository directory does not exist.');
 
 		$trackTime = microtime();
@@ -249,7 +269,7 @@ class tx_ter_helper {
 				$versionObj->appendChild (new DOMElement('title', $this->xmlentities ($extensionVersionArr['title'])));
 				$versionObj->appendChild (new DOMElement('description', $this->xmlentities ($extensionVersionArr['description'])));
 				$versionObj->appendChild (new DOMElement('state', $this->xmlentities ($extensionVersionArr['state'])));
-				$versionObj->appendChild (new DOMElement('reviewstate', $this->xmlentities ($extensionVersionArr['reviewstate'])));
+				$versionObj->appendChild (new DOMElement('reviewstate', intval($extensionVersionArr['reviewstate'])));
 				$versionObj->appendChild (new DOMElement('category', $this->xmlentities ($extensionVersionArr['category'])));
 				$versionObj->appendChild (new DOMElement('downloadcounter', $this->xmlentities ($extensionVersionArr['downloadcounter'])));
 				$versionObj->appendChild (new DOMElement('lastuploaddate', $extensionVersionArr['lastuploaddate']));
@@ -267,10 +287,20 @@ class tx_ter_helper {
 		$extensionsObj->appendChild (new DOMComment('Index created in '.(microtime()-$trackTime).' ms'));
 		
 			// Write XML data to disc:
-		$fh = @fopen ($this->pluginObj->repositoryDir.'extensions.xml.gz', 'wb');
+		$fh = fopen ($this->pluginObj->repositoryDir.'new-extensions.xml.gz', 'wb');
 		if (!$fh) throw new SoapFault (TX_TER_ERROR_UPLOADEXTENSION_WRITEERRORWHILEWRITINGEXTENSIONSINDEX, 'Write error while writing extensions index file: '.$this->pluginObj->repositoryDir.'extensions.xml');
 		fwrite ($fh, gzencode ($dom->saveXML(), 9));
 		fclose ($fh);
+
+		if (!@filesize($this->pluginObj->repositoryDir.'new-extensions.xml.gz') > 0) {
+			t3lib_div::devLog	('Newly created extension index is zero bytes!', 'tx_ter_helper', 0);
+			throw new SoapFault (TX_TER_ERROR_UPLOADEXTENSION_WRITEERRORWHILEWRITINGEXTENSIONSINDEX, 'Write error while writing extensions index file (zero bytes): '.$this->pluginObj->repositoryDir.'extensions.xml');	
+		}
+		
+		@unlink ($this->pluginObj->repositoryDir.'extensions.xml.gz');
+		rename ($this->pluginObj->repositoryDir.'new-extensions.xml.gz', $this->pluginObj->repositoryDir.'extensions.xml.gz');
+		t3lib_div::writeFile ($this->pluginObj->repositoryDir.'extensions.md5', md5_file ($this->pluginObj->repositoryDir.'extensions.xml.gz'));		
+		
 	}
 	
 	/**
@@ -281,6 +311,8 @@ class tx_ter_helper {
 	 * @access	public 
 	 */
 	public function xmlentities ($string) {
+			// Until I have found a better solution for guaranteeing valid characters, I use this regex:
+		$string = (preg_replace('/[^\w\s"%&\[\]\(\)\.\,\;\:\/\?\{\}!\$\-\/]/','',$string));
 		return str_replace ( array ( '&', '"', "'", '<', '>' ), array ( '&amp;' , '&quot;', '&apos;' , '&lt;' , '&gt;' ), $string );
 	}
 }

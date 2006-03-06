@@ -1,7 +1,6 @@
 plugin.tx_ter_pi1 {
 
 	pid =
-	respositoryDir = 
 	reviewersFrontendUsergroupUid = 
 	mirrorsFrontendUsergroupUid =
 	

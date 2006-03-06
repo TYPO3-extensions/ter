@@ -1,0 +1,2 @@
+# cat=basic//; type=string; label=Full path to the repository: Enter the full path to the local extension repository. Example: /var/www/fileadmin/ter/
+repositoryDir =

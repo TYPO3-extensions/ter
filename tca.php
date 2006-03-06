@@ -33,15 +33,6 @@ $TCA['tx_ter_extensionkeys'] = Array (
 				'eval' => 'trim,unique,required'
 			)
 		),
-		'uploadpassword' => Array (
-			'label' => 'LLL:EXT:ter/locallang_tca.php:tx_ter_keytable.uploadpassword',
-			'config' => Array (
-				'type' => 'input',
-				'size' => '40',
-				'max' => '30',
-				'eval' => 'trim'
-			)
-		),
 		'maxstoresize' => Array (
 			'label' => 'LLL:EXT:ter/locallang_tca.php:tx_ter_keytable.maxstoresize',
 			'config' => Array (
@@ -53,7 +44,7 @@ $TCA['tx_ter_extensionkeys'] = Array (
 		),
 	),
 	'types' => Array (	
-		'1' => Array('showitem' => 'hidden;;;;1-1-1, title,description,ownerusername,uploadpassword,maxstoressize')
+		'1' => Array('showitem' => 'hidden;;;;1-1-1, title,description,ownerusername,maxstoressize')
 	)
 );
 

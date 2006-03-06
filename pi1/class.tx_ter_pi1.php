@@ -48,12 +48,16 @@ class tx_ter_pi1 extends tslib_pibase {
 	
 	function main ($content, $conf) {
 		global $TSFE;
-
+		
 		$this->pi_initPIflexForm();
 		$this->conf = $conf;
 
 		$this->extensionsPID = $conf['pid'];
-		$this->repositoryDir = $conf['repositoryDir'];
+		$staticConfArr = unserialize ($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['ter']);
+		if (is_array ($staticConfArr)) {			
+			$this->repositoryDir = $staticConfArr['repositoryDir'];
+			if (substr ($this->repositoryDir, -1, 1) != '/') $this->repositoryDir .= '/';
+		}
 			
 		$server = new SoapServer(NULL, array ('uri' => 'http://typo3.org/soap/tx_ter'));
 		$server->setClass ('tx_ter_api', $this);

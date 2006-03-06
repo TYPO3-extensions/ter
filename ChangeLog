@@ -1,4 +1,9 @@
-17.01.06 Robert Lemke <robert@typo3.org
+03.03.06 Robert Lemke <robert@typo3.org>
+
+	+ Added new fault code 207 to tx_ter_helper class
+	# Fixed a bug (and added unit test) which allowed anyone with a valid typo3.org account to upload any extension
+
+17.01.06 Robert Lemke <robert@typo3.org>
 
 	* Update reflecting the current state.
 

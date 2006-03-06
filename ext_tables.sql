@@ -11,7 +11,6 @@ CREATE TABLE tx_ter_extensionkeys (
   description varchar(255) DEFAULT '' NOT NULL,
   extensionkey varchar(30) DEFAULT '' NOT NULL,
   ownerusername varchar(30) DEFAULT '' NOT NULL,
-  uploadpassword varchar(30) DEFAULT '' NOT NULL,
   maxstoresize int(11) DEFAULT '0' NOT NULL,
   downloadcounter int(11) DEFAULT '0' NOT NULL,
 
@@ -19,6 +18,20 @@ CREATE TABLE tx_ter_extensionkeys (
   KEY extkey (extensionkey,pid),
   KEY exttitle (title,pid)
 );
+
+#
+# Table structure for table 'tx_ter_extensionmembers'
+#
+CREATE TABLE tx_ter_extensionmembers ( 
+  uid int(11) unsigned DEFAULT '0' NOT NULL auto_increment,
+  extensionkey varchar(30) DEFAULT '' NOT NULL,
+  username varchar(30) DEFAULT '' NOT NULL,
+
+  PRIMARY KEY (uid),
+  KEY extkey (extensionkey),
+  KEY usern (username)
+);
+
 
 #
 # Table structure for table 'tx_ter_extensions'

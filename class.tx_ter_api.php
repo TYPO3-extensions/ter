@@ -48,7 +48,7 @@ class tx_ter_api {
 	protected	$parentObj;
 	protected	$cObj;
 
-	protected	$extensionMaxUploadSize = 5000000;					// 5MB Maximum upload size for extensions
+	protected	$extensionMaxUploadSize = 31457280;					// 30MB Maximum upload size for extensions
 	
 	/**
 	 * Constructor
@@ -82,7 +82,7 @@ class tx_ter_api {
 	 * @since	2.0.0
 	 */
 	public function ping ($value) {
-		return 'pong'.$value;	
+		return 'pong'.$value;
 	}
 		
 	/**
@@ -90,28 +90,30 @@ class tx_ter_api {
 	 * 
 	 * @param	object	$accountData: Username and passwords for upload the extension
 	 * @param	object	$extensionInfoData: The general extension information as received by the SOAP server
-	 * @param	array	$filesData: The array of file data objects as received by the SOAP server
+	 * @param	array		$filesData: The array of file data objects as received by the SOAP server
 	 * @return	object	uploadExtensionResult object if upload was successful, otherwise a SoapFault exception is thrown.
 	 * @access	public 
 	 * @since	2.0.0
 	 */
 	public function uploadExtension ($accountData, $extensionInfoData, $filesData) {
 		global $TSFE, $TYPO3_DB;
-		
+
+		if (TYPO3_DLOG) t3lib_div::devLog('tx_ter_api->uploadExtension()', 'ter', 0, 'Upload of extension '.$extensionInfoData->extensionKey.' ('.$extensionInfoData->version.') by user '.$accountData->username);
+
 		$uploadUserRecordArr = $this->helperObj->getValidUser ($accountData);
 		$extensionKeyRecordArr = $this->helperObj->getExtensionKeyRecord ($extensionInfoData->extensionKey);				
-		if (!strlen($accountData->uploadPassword)) throw new SoapFault (TX_TER_ERROR_UPLOADEXTENSION_NOUPLOADPASSWORD, 'No upload password submitted.');
 		if ($extensionKeyRecordArr == FALSE) throw new SoapFault (TX_TER_ERROR_UPLOADEXTENSION_EXTENSIONDOESNTEXIST, 'Extension does not exist.');
-		if ($accountData->uploadPassword != $extensionKeyRecordArr['uploadpassword']) throw new SoapFault (TX_TER_ERROR_UPLOADEXTENSION_WRONGUPLOADPASSWORD, 'Wrong upload password.');
-		
-		$this->uploadExtension_calculateAndSetNewVersionNumber ($extensionInfoData);
+		if ($extensionKeyRecordArr['ownerusername'] != $accountData->username) throw new SoapFault (TX_TER_ERROR_UPLOADEXTENSION_ACCESSDENIED, 'Access denied.'); 
+
 		$this->uploadExtension_writeExtensionAndIconFile ($extensionInfoData, $filesData);
 		$this->uploadExtension_writeExtensionInfoToDB ($accountData, $extensionInfoData, $filesData);
-		$this->helperObj->writeExtensionIndexFile ();
+		$this->helperObj->requestUpdateOfExtensionIndexFile();
 
 		return array (
 			'resultCode' => TX_TER_RESULT_EXTENSIONSUCCESSFULLYUPLOADED,
-			'resultMessages' => array(),
+			'resultMessages' => array(
+				'Please note that it might take a while (up to one day) until your extension and the documentation appear on TYPO3.org.'
+			),
 			'version' => $extensionInfoData->version,
 		);
 	}
@@ -185,7 +187,7 @@ class tx_ter_api {
 	 */
 	public function getExtensionKeys ($accountData, $extensionKeyFilterOptions) {
 		global $TSFE, $TYPO3_DB;
-		
+
 		$userRecordArr = $this->helperObj->getValidUser ($accountData);
 		$extensionKeyDataArr = array();
 
@@ -286,7 +288,7 @@ class tx_ter_api {
 		if (is_array ($extensionKeyRecordArr)) {			
 			if ($extensionKeyRecordArr['ownerusername'] != $accountData->username) throw new SoapFault (TX_TER_ERROR_MODIFYEXTENSIONKEY_ACCESSDENIED, 'Access denied.'); 
 			$resultCode = $this->modifyExtensionKey_writeModifiedKeyRecordIntoDB ($accountData, $modifyExtensionKeyData);			
-			$this->helperObj->writeExtensionIndexFile ();
+			$this->helperObj->requestUpdateOfExtensionIndexFile();
 		} else {
 			$resultCode = TX_TER_ERROR_MODIFYEXTENSIONKEY_KEYDOESNOTEXIST;
 		}
@@ -316,7 +318,9 @@ class tx_ter_api {
 		if (!t3lib_div::inList($userRecordArr['usergroup'], $reviewersFrontendUsergroupUid)) throw new SoapFault (TX_TER_ERROR_SETREVIEWSTATE_ACCESSDENIED, 'Access denied.');
 		
 		$this->setReviewState_writeNewStateIntoDB($setReviewStateData);
-		$this->helperObj->writeExtensionIndexFile ();
+		
+#		Regeneration of index file is currently deactived:
+#		$this->helperObj->requestUpdateOfExtensionIndexFile();
 
 		return array (
 			'resultCode' => TX_TER_RESULT_GENERAL_OK,
@@ -346,7 +350,9 @@ class tx_ter_api {
 		if ((integer)$incrementor !== abs((integer)($incrementor))) throw new SoapFault (TX_TER_ERROR_INCREASEEXTENSIONDOWNLOADCOUNTER_INCREMENTORNOTPOSITIVEINTEGER, 'The incrementor must be a positive integer value.');
 		
 		$this->increaseExtensionDownloadCounter_increaseCounterInDB($extensionVersionData, $incrementor);
-		$this->helperObj->writeExtensionIndexFile ();
+
+		#	Regeneration of index file is currently deactived:
+		#	$this->helperObj->requestUpdateOfExtensionIndexFile();
 
 		return array (
 			'resultCode' => TX_TER_RESULT_GENERAL_OK,
@@ -367,25 +373,6 @@ class tx_ter_api {
 	 *********************************************************/
 
 	/**
-	 * Checks the version number of the uploaded extension and modifies it if
-	 * neccessary. The result will be written directly into $extensionInfoData->version
-	 *
-	 * @param	object		$extensionInfoData: The general extension information as received by the SOAP server
-	 * @result	void
-	 * @access	protected
-	 */
-	protected function uploadExtension_calculateAndSetNewVersionNumber (&$extensionInfoData) { 
-		$latestVersion = $this->helperObj->getLatestVersionNumberOfExtension ($extensionInfoData->extensionKey);
-		if (version_compare ($extensionInfoData->version, $latestVersion, '>=')) {
-			$newVersion = $extensionInfoData->version;
-		} else {
-			list ($majorVersion, $minorVersion, $devVersion) = t3lib_div::intExplode ('.', $latestVersion);			
-			$newVersion = $majorVersion.'.'.$minorVersion.'.'.($devVersion+1);
-		}
-		$extensionInfoData->version = $newVersion;
-	}
-
-	/**
 	 * Creates a T3X file by using the extension info data and the files data and 
 	 * writes the file to the repository's directory. By default this function creates
 	 * gzip compressed T3X files.
@@ -394,18 +381,22 @@ class tx_ter_api {
 	 * added to $extensionInfoData for later informational use.
 	 *
 	 * @param	object		$extensionInfoData: The general extension information as received by the SOAP server
-	 * @param	array		$filesData: The array of file data objects as received by the SOAP server
+	 * @param	object		$filesData: The array of file data objects as received by the SOAP server
 	 * @access	protected
 	 */
 	protected function uploadExtension_writeExtensionAndIconFile (&$extensionInfoData, $filesData) { 
 
 		if (!@is_dir ($this->parentObj->repositoryDir)) throw new SoapFault (TX_TER_ERROR_GENERAL_EXTREPDIRDOESNTEXIST, 'Extension repository directory does not exist.');
+		t3lib_div::devLog($filesData->fileData,'filesData->fileData',0);
 		if (!is_array ($filesData->fileData)) throw new SoapFault (TX_TER_ERROR_GENERAL_EXTENSIONCONTAINSNOFILES, 'Extension contains no files.');
 		
 			// Prepare Files Data Array:
 		$preparedFilesDataArr = array();
 		foreach ($filesData->fileData as $fileData) {			
+
 			$decodedContent = base64_decode ($fileData->content);
+			if ($fileData->contentMD5 != md5 ($decodedContent)) throw new SoapFault (TX_TER_ERROR_UPLOADEXTENSION_FILEMD5DOESNOTMATCH, 'MD5 does not match for file '.(string)$fileData->name);
+
 			$preparedFilesDataArr[$fileData->name] = array (
 				'name' => $fileData->name,
 				'size' => $fileData->size,
@@ -560,29 +551,26 @@ class tx_ter_api {
 			'state' => $extensionInfoData->metaData->state,
 			'category' => $extensionInfoData->metaData->category,
 			'ismanualincluded' => $extensionInfoData->technicalData->isManualIncluded,
-			't3xfilemd5' => $extensionInfoData->t3xFileMD5,			
+			't3xfilemd5' => $extensionInfoData->t3xFileMD5,
+			'reviewstate' => 0
 		);
 
 			// Either update an existing or insert a new extension record:
-		$latestVersion = $this->helperObj->getLatestVersionNumberOfExtension ($extensionInfoData->extensionKey);
-		if (version_compare ($extensionInfoData->version, $latestVersion, '==')) {
+		$result = $TYPO3_DB->exec_SELECTquery (
+			'uid',
+			'tx_ter_extensions',
+			'extensionkey ="'.$TYPO3_DB->quoteStr($extensionInfoData->extensionKey, 'tx_ter_extensions').'" AND version = "'.$TYPO3_DB->quoteStr($extensionInfoData->version, 'tx_ter_extensions').'"'
+		);
+		$existingExtensionsRow = $result ? $TYPO3_DB->sql_fetch_assoc ($result) : FALSE;
 
-			$result = $TYPO3_DB->exec_SELECTquery (
-				'uid',
-				'tx_ter_extensions', 
-				'extensionkey ="'.$extensionInfoData->extensionKey.'" AND version = "'.$extensionInfoData->version.'"'
-			);
-			$existingRow = $TYPO3_DB->sql_fetch_assoc ($result);
-			if (!is_array ($existingRow)) throw new SoapFault (TX_TER_ERROR_UPLOADEXTENSION_EXISTINGEXTENSIONRECORDNOTFOUND, 'Extension database record not found while updating existing extension version.');			
-			$extensionUid = $existingRow['uid']; 
-
+		if (is_array($existingExtensionsRow)) {
+			$extensionUid = $existingExtensionsRow['uid'];
 			$result = $TYPO3_DB->exec_UPDATEquery (
 				'tx_ter_extensions', 
 				'extensionkey ="'.$extensionInfoData->extensionKey.'" 
 				 AND version = "'.$extensionInfoData->version.'"',
 				$extensionsRow
 			);
-
 		} else {
 			$result = $TYPO3_DB->exec_INSERTquery ('tx_ter_extensions', $extensionsRow);
 			$extensionUid = $TYPO3_DB->sql_insert_id();
@@ -627,14 +615,20 @@ class tx_ter_api {
 			'loadorder' => $extensionInfoData->technicalData->loadOrder,
 		);
 
-		if (version_compare ($extensionInfoData->version, $latestVersion, '==')) {
-			$result = $TYPO3_DB->exec_SELECTquery (
-				'uid',
-				'tx_ter_extensiondetails', 
-				'extensionuid = '.$extensionUid.''
+			// Either update an existing or insert a new extension details record:
+		$result = $TYPO3_DB->exec_SELECTquery (
+			'uid',
+			'tx_ter_extensiondetails',
+			'extensionuid='.intval($extensionUid)
+		);
+		$existingExtensionDetailsRow = $result ? $TYPO3_DB->sql_fetch_assoc ($result) : FALSE;
+
+		if (is_array($existingExtensionDetailsRow)) {
+			$TYPO3_DB->exec_UPDATEquery (
+				'tx_ter_extensiondetails',
+				'uid='.intval($existingExtensionDetailsRow['uid']),
+				$extensionDetailsRow
 			);
-			$existingRow = $TYPO3_DB->sql_fetch_assoc ($result);
-			$this->cObj->DBgetUpdate('tx_ter_extensiondetails', $existingRow['uid'], $extensionDetailsRow, implode (',',array_keys($extensionDetailsRow)), TRUE);			
 		} else {
 			$this->cObj->DBgetInsert('tx_ter_extensiondetails', $this->parentObj->extensionsPID, $extensionDetailsRow, implode (',',array_keys($extensionDetailsRow)), TRUE);			
 		}  
@@ -715,7 +709,6 @@ class tx_ter_api {
 			'extensionkey' => $extensionKeyData->extensionKey,
 			'title' => $TSFE->csConvObj->strtrunc('utf-8', $extensionKeyData->title, 50),
 			'description' => $TSFE->csConvObj->strtrunc('utf-8', $extensionKeyData->description, 255),
-			'uploadpassword' => $TSFE->csConvObj->strtrunc('utf-8', $extensionKeyData->uploadPassword, 30),
 			'ownerusername' => $accountData->username,
 			'maxstoresize' => 0			
 		);
@@ -758,10 +751,6 @@ class tx_ter_api {
 			if ($newOwnerUserRecordArr = $TYPO3_DB->sql_fetch_assoc($res)) {
 				$updateValues['ownerusername'] = $newOwnerUserRecordArr['username'];
 			} else return TX_TER_ERROR_GENERAL_USERNOTFOUND;
-		}
-
-		if (isset ($modifyExtensionKeyData->uploadPassword)) {
-			$updateValues['uploadpassword'] = $modifyExtensionKeyData->uploadPassword;
 		}
 
 		$res = $TYPO3_DB->exec_UPDATEquery (

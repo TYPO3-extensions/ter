@@ -107,8 +107,7 @@ class tx_ter_testcase extends tx_t3unit_testcase {
 	 *
 	 * Note: This test requires a valid FE user "t3unit" with 
 	 *       password "t3unitpassword" being the owner of the 
-	 *       extension "nothing" where the upload password is 
-	 *       "t3unituploadpassword"
+	 *       extension "nothing"
 	 *
 	 *********************************************************/
 
@@ -185,14 +184,14 @@ class tx_ter_testcase extends tx_t3unit_testcase {
 		self::assertTrue ($extensionDetailsRowCheck, 'Row of table "tx_ter_extensiondetails" does not contain the uploaded extension data!');
 	}
 
-	public function test_uploadExtension_withoutUserPasswordAndUploadPassword() {
+	public function test_uploadExtension_withoutUserPassword() {
 		$this->createFixture_uploadExtension (&$accountData, &$extensionData, &$filesData);
 		$soapClientObj = new SoapClient ($this->WSDLURI, array ('trace' => 1, 'exceptions' => 1));
 		
 			// --- TEST AN EXTENSION UPLOAD WITHOUT ANY USERNAME, PASSWORD AND UPLOAD PASSWORD ---------------
 		try {
 			$result = $soapClientObj->uploadExtension (
-				array ('username' => '', 'password' => 't3unitpassword', 'uploadPassword' => 't3unituploadpassword'),
+				array ('username' => '', 'password' => 't3unitpassword'),
 				$extensionData,
 				$filesData
 			);
@@ -201,32 +200,23 @@ class tx_ter_testcase extends tx_t3unit_testcase {
 		}
 		try {
 			$result = $soapClientObj->uploadExtension (
-				array ('username' => 't3unit', 'password' => '', 'uploadPassword' => 't3unituploadpassword'),
+				array ('username' => 't3unit', 'password' => ''),
 				$extensionData,
 				$filesData
 			);
 			self::fail ('Extension upload without specifying a password did not throw an exception!');
 		} catch (SoapFault $exception) {
 		}
-		try {
-			$result = $soapClientObj->uploadExtension (
-				array ('username' => 't3unit', 'password' => 't3unitpassword', 'uploadPassword' => ''),
-				$extensionData,
-				$filesData
-			);
-			self::fail ('Extension upload without specifying a upload password did not throw an exception!');
-		} catch (SoapFault $exception) {
-		}
 	}
 
-	public function test_uploadExtension_withWrongUserPasswordAndUploadPassword() {
+	public function test_uploadExtension_withWrongUserPassword() {
 		$this->createFixture_uploadExtension (&$accountData, &$extensionData, &$filesData);
 		$soapClientObj = new SoapClient ($this->WSDLURI, array ('trace' => 1, 'exceptions' => 1));
 		
-			// --- TEST AN EXTENSION UPLOAD WITH WRONG USERNAME, PASSWORD AND UPLOAD PASSWORD ---------------
+			// --- TEST AN EXTENSION UPLOAD WITH WRONG USERNAME AND PASSWORD ---------------
 		try {
 			$result = $soapClientObj->uploadExtension (
-				array ('username' => 't3something', 'password' => 't3unitpassword', 'uploadPassword' => 't3unituploadpassword'),
+				array ('username' => 't3something', 'password' => 't3unitpassword'),
 				$extensionData,
 				$filesData
 			);
@@ -235,23 +225,33 @@ class tx_ter_testcase extends tx_t3unit_testcase {
 		}
 		try {
 			$result = $soapClientObj->uploadExtension (
-				array ('username' => 't3unit', 'password' => 'wrongpassword', 'uploadPassword' => 't3unituploadpassword'),
+				array ('username' => 't3unit', 'password' => 'wrongpassword'),
 				$extensionData,
 				$filesData
 			);
 			self::fail ('Extension upload with wrong password did not throw an exception!');
 		} catch (SoapFault $exception) {
 		}
+	}
+
+	public function test_uploadExtension_withWrongUser() {
+		$this->createFixture_uploadExtension (&$accountData, &$extensionData, &$filesData);
+		$soapClientObj = new SoapClient ($this->WSDLURI, array ('trace' => 1, 'exceptions' => 1));
+		
+			// TEST AN EXTENSION UPLOAD WITH VALID USERNAME AND PASSWORD BUT A USER WHICH IS NOT THE OWNER OF THE EXTENSION
 		try {
 			$result = $soapClientObj->uploadExtension (
-				array ('username' => 't3unit', 'password' => 't3unitpassword', 'uploadPassword' => 'wronguploadpassword'),
+				array ('username' => 't3unit-2', 'password' => 't3unitpassword'),
 				$extensionData,
 				$filesData
 			);
-			self::fail ('Extension upload with wrong upload password did not throw an exception!');
+			self::fail ('Extension upload by a user which doesn\'t have the appropriate rights did not throw an exception!');
 		} catch (SoapFault $exception) {
+			self::assertEquals(208, (integer)$exception->faultcode, 'Extension upload by a user which doesn\'t have the appropriate rights throwed an exception but with the wrong faultcode ('.$exception->faultcode.') !');
 		}
 	}
+
+
 
 
 
@@ -387,8 +387,7 @@ class tx_ter_testcase extends tx_t3unit_testcase {
 		$extensionKeyData = array (
 			'extensionKey' => 'ter_testcase_testkey',
 			'title' => 'TER T3Unit Key(äöüæøåñè<&) <em>xss</em>',
-			'description' => 'This key was registered by T3Unit for checking the registerExtensionKey service (äöüæøåñè<&) <em>xss</em>',
-			'uploadPassword' => 't3unituploadpasswordäöü'
+			'description' => 'This key was registered by T3Unit for checking the registerExtensionKey service (äöüæøåñè<&) <em>xss</em>'
 		);
 		try {
 			$result = $soapClientObj->registerExtensionKey ($accountData, $extensionKeyData);
@@ -400,7 +399,7 @@ class tx_ter_testcase extends tx_t3unit_testcase {
 		
 			// --- CHECK THE DATABASE DIRECTLY IF EXTENSION KEY WAS STORED CORRECTLY -----------------------------------
 		$res = $TYPO3_DB->exec_SELECTquery (
-			'uid,pid,extensionkey,title,description,ownerusername,uploadpassword,maxstoresize,downloadcounter',
+			'uid,pid,extensionkey,title,description,ownerusername,maxstoresize,downloadcounter',
 			'tx_ter_extensionkeys',
 			'extensionkey="'.$extensionKeyData['extensionKey'].'"'
 		);
@@ -410,7 +409,6 @@ class tx_ter_testcase extends tx_t3unit_testcase {
 			$extensionKeysRow['extensionkey'] == $extensionKeyData['extensionKey'] &&
 			$extensionKeysRow['title'] == $extensionKeyData['title'] &&
 			$extensionKeysRow['ownerusername'] == $accountData['username'] &&
-			$extensionKeysRow['uploadpassword'] == $extensionKeyData['uploadPassword'] &&
 			$extensionKeysRow['maxstoresize'] == 0
 		);
 
@@ -494,8 +492,7 @@ class tx_ter_testcase extends tx_t3unit_testcase {
 		$extensionKeyData = array (
 			'extensionKey' => 'ter_testcase_testkey',
 			'title' => 'TER T3Unit Key(äöüæøåñè<&) <em>xss</em>',
-			'description' => 'This key was registered by T3Unit for checking the registerExtensionKey service (äöüæøåñè<&) <em>xss</em>',
-			'uploadPassword' => 't3unituploadpasswordäöü'
+			'description' => 'This key was registered by T3Unit for checking the registerExtensionKey service (äöüæøåñè<&) <em>xss</em>'
 		);
 		try {
 			$resultArr = $soapClientObj->registerExtensionKey ($accountData, $extensionKeyData);
@@ -575,8 +572,7 @@ class tx_ter_testcase extends tx_t3unit_testcase {
 		$extensionKeyData = array (
 			'extensionKey' => 'ter_testcase_testkey',
 			'title' => 'TER T3Unit Key(äöüæøåñè<&) <em>xss</em>',
-			'description' => 'This key was registered by T3Unit for checking the registerExtensionKey service (äöüæøåñè<&) <em>xss</em>',
-			'uploadPassword' => 't3unituploadpasswordäöü'
+			'description' => 'This key was registered by T3Unit for checking the registerExtensionKey service (äöüæøåñè<&) <em>xss</em>'
 		);
 		try {
 			$resultArr = $soapClientObj->registerExtensionKey ($accountData, $extensionKeyData);
@@ -586,7 +582,7 @@ class tx_ter_testcase extends tx_t3unit_testcase {
 		
 		self::assertTrue (is_array ($resultArr) && ($resultArr['resultCode'] == 10503), 'Registration of valid extension key was not successful (result: '.$resultArr['resultCode'].')');
 
-			// --- MODIFY THE UPLOAD PASSWORD OF CREATED KEY WITH INVALID ACCOUNT DATA ---------------------------
+			// --- MODIFY THE OWNER OF CREATED KEY WITH INVALID ACCOUNT DATA ---------------------------
 		$accountData = array(
 			'username' => 't3unit-2',
 			'password' => 't3unitpassword'
@@ -594,7 +590,7 @@ class tx_ter_testcase extends tx_t3unit_testcase {
 		
 		$extensionKeyData = array (
 			'extensionKey' => 'ter_testcase_testkey',
-			'uploadPassword' => 't3unitchangedpassword'
+			'ownerUsername' => 't3unit-2'
 		);
 		
 		try {
@@ -606,21 +602,11 @@ class tx_ter_testcase extends tx_t3unit_testcase {
 			}
 		}
 
-			// --- MODIFY UPLOAD PASSWORD OF THE CREATED KEY WITH VALID ACCOUNT DATA -----------------------------
+			// --- MODIFY OWNER OF THE CREATED KEY TO NON EXISTING USER ------------------------------------------
 		$accountData = array(
 			'username' => 't3unit',
 			'password' => 't3unitpassword'
-		);			
-		
-		try {
-			$resultArr = $soapClientObj->modifyExtensionKey($accountData, $extensionKeyData);
-		} catch (SoapFault $exception) {
-			self::fail ('SoapFault Exception (#'.$exception->faultcode.'): '.$exception->faultstring);
-		}
-		
-		self::assertTrue (is_array ($resultArr) && ($resultArr['resultCode'] == 10000), 'Modifying extension key did not return the expected result (result: '.$resultArr['resultCode'].')');
-
-			// --- MODIFY OWNER OF THE CREATED KEY TO NON EXISTING USER ------------------------------------------
+		);
 
 		$extensionKeyData = array (
 			'extensionKey' => 'ter_testcase_testkey',
@@ -632,7 +618,6 @@ class tx_ter_testcase extends tx_t3unit_testcase {
 		} catch (SoapFault $exception) {
 			self::fail ('SoapFault Exception (#'.$exception->faultcode.'): '.$exception->faultstring);
 		}
-
 		self::assertTrue($resultArr['resultCode'] == 102,'Result while trying to set a bad extension key owner was not as expected! (resultCode: '.$resultArr['resultCode'].')');
 
 			// --- MODIFY OWNER OF THE CREATED KEY TO VALID USER ------------------------------------------------
@@ -653,17 +638,14 @@ class tx_ter_testcase extends tx_t3unit_testcase {
 
 			// --- CHECK THE DATABASE DIRECTLY IF EXTENSION KEY WAS REALLY MODIFIED -----------------------------
 		$res = $TYPO3_DB->exec_SELECTquery (
-			'extensionkey,uploadpassword,ownerusername',
+			'extensionkey,ownerusername',
 			'tx_ter_extensionkeys',
 			'extensionkey="ter_testcase_testkey"'
 		);
 		if (!$res) self::fail ('No MySQL result while checking if extension key was correctly inserted into the DB');
 		
 		$extensionKeysRow = $TYPO3_DB->sql_fetch_assoc ($res);
-		$extensionKeysRowCheck = (
-			$extensionKeysRow['ownerusername'] == 't3unit-2' &&
-			$extensionKeysRow['uploadpassword'] == 't3unitchangedpassword'
-		);
+		$extensionKeysRowCheck = $extensionKeysRow['ownerusername'] == 't3unit-2';
 
 		$TYPO3_DB->exec_DELETEquery (
 			'tx_ter_extensionkeys',
@@ -840,9 +822,19 @@ class tx_ter_testcase extends tx_t3unit_testcase {
 			'tx_ter_extensionkeys',
 			'extensionkey ="'.$TYPO3_DB->quoteStr($extensionVersionData['extensionKey'], 'tx_ter_extensions').'"'
 		);
-		if (!$res) self::fail ('No MySQL result while checking if extension download counter was correctly increased in the DB');
 		$totalCounterRow = $TYPO3_DB->sql_fetch_assoc ($res);
 		$totalCounter = $totalCounterRow['downloadcounter'];
+
+			// Save the extension version counter:
+		$res = $TYPO3_DB->exec_SELECTquery (
+			'downloadcounter',
+			'tx_ter_extensions',
+			'extensionkey ="'.$TYPO3_DB->quoteStr($extensionVersionData['extensionKey'], 'tx_ter_extensions').'" AND '.
+				'version ="'.$TYPO3_DB->quoteStr($extensionVersionData['version'], 'tx_ter_extensions').'"'
+		);
+		$versionCounterRow = $TYPO3_DB->sql_fetch_assoc ($res);
+		$versionCounter = $versionCounterRow['downloadcounter'];
+
 
 			// Now try to increase the download counter (must result in "access denied"):
 		$accountData = array(
@@ -893,7 +885,7 @@ class tx_ter_testcase extends tx_t3unit_testcase {
 		
 		$row = $TYPO3_DB->sql_fetch_assoc ($res);
 		
-		self::assertEquals((integer)$row['downloadcounter'], 20, 'The download counter found in the database record is not like expected!');
+		self::assertEquals((integer)$row['downloadcounter'], ($versionCounter+20), 'The download counter found in the database record is not like expected!');
 
 		$res = $TYPO3_DB->exec_SELECTquery (
 			'downloadcounter',
@@ -930,7 +922,6 @@ class tx_ter_testcase extends tx_t3unit_testcase {
 		$accountData = array (
 			'username' => 't3unit',
 			'password' => 't3unitpassword',
-			'uploadPassword' => 't3unituploadpassword',
 		);
 
 		$extensionData = array (

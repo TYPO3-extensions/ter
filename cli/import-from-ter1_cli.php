@@ -1,20 +1,29 @@
-#! /usr/bin/php -q
+#! /usr/local/bin/php -q
 <?php
 
-die ('Access denied');
+/**
+ * This script imports the whole TER1 into the TER2 database structure, creates all the .t3x
+ * files and the extensions.xml.gz index. As this script was only neccessary for the initial
+ * import of all extensions, it possibly will never be needed again and only stays here
+ * for historical reasons.
+ * 
+ * Keep off - never ever use this at TYPO3.org again ... 
+ */
+
+die ('Better not ...');
 
 	// Defining circumstances for CLI mode:
 define('TYPO3_cliMode', TRUE);
 
 	// Defining PATH_thisScript here: Must be the ABSOLUTE path of this script in the right context:
 	// This will work as long as the script is called by it's absolute path!
-define('PATH_thisScript',$_ENV['_']?$_ENV['_']:$_SERVER['_']);
+#define('PATH_thisScript', (is_array($_ENV) && isset($_ENV['_'])) ?$_ENV['_']:$_SERVER['_']);
+define('PATH_thisScript', $_SERVER['PHP_SELF']);
 
 require(dirname(PATH_thisScript).'/conf.php');
 require(dirname(PATH_thisScript).'/'.$BACK_PATH.'init.php');
 
 require_once(dirname(PATH_thisScript).'/../class.tx_ter_helper.php');
-
 
 // =========================================================================
 
@@ -23,8 +32,7 @@ $extensionsPID = 1320;
 
 // =========================================================================
 
- writeExtensionIndexfile ();
- die('Only regenerated extensions.xml file'.chr(10).chr(10));
+writeExtensionIndexfile ();
 
 $res = $TYPO3_DB->exec_SELECTquery (
 	'*',
@@ -60,7 +68,6 @@ while ($extensionKeyRow = $TYPO3_DB->sql_fetch_assoc ($res)) {
 			'description' => $extensionKeyRow['description'],
 			'extensionkey' => $extensionKeyRow['extension_key'],
 			'ownerusername' => $accountData['username'],
-			'uploadpassword' => $extensionKeyRow['upload_password'],
 			'maxstoresize' => $extensionKeyRow['maxStoreSize'],
 	  		'downloadcounter' => $extensionKeyRow['download_counter']			
 		);		
@@ -335,7 +342,6 @@ function writeExtensionInfoToDB ($accountData, $extensionData, $filesData, $exte
 			'title' => $extensionData['metaData']['title'],
 			'description' => $extensionData['metaData']['description'],
 			'ownerusername' => $accountData['username'],
-			'uploadpassword' => $oldExtensionKeyRow['upload_password'],
 			'maxstoresize' => $oldExtensionKeyRow['maxStoreSize'],
 	  		'downloadcounter' => $oldExtensionKeyRow['download_counter']			
 		);		
@@ -481,14 +487,16 @@ function writeExtensionInfoToDB ($accountData, $extensionData, $filesData, $exte
 		
 			// Read the extension records from the DB:
 		$extensionsAndVersionsArr = array();
+		$extensionsTotalDownloadsArr = array();
 		while ($row = $TYPO3_DB->sql_fetch_assoc($res)) {
 			$res2 = $TYPO3_DB->exec_SELECTquery(
-				'ownerusername',
+				'ownerusername,downloadcounter',
 				'tx_ter_extensionkeys',
 				'extensionkey="'.$row['extensionkey'].'"'
 			);
 			$extensionKeyRow = $TYPO3_DB->sql_fetch_assoc($res2);
 			$row['ownerusername'] = $extensionKeyRow['ownerusername'];
+			$extensionsTotalDownloadsArr[$row['extensionkey']] = $extensionKeyRow['downloadcounter'];
 
 			$res2 = $TYPO3_DB->exec_SELECTquery(
 				'lastuploaddate,uploadcomment,dependencies,authorname,authoremail,authorcompany',
@@ -504,13 +512,14 @@ function writeExtensionInfoToDB ($accountData, $extensionData, $filesData, $exte
 
 			// Prepare the DOM object:
 		$dom = new DOMDocument ('1.0', 'utf-8');
-		$dom->formatOutput = TRUE;
+		$dom->formatOutput = FALSE;
 		$extensionsObj = $dom->appendChild (new DOMElement('extensions'));
 
 			// Create the nested XML structure:
 		foreach ($extensionsAndVersionsArr as $extensionKey => $extensionVersionsArr) {
 			$extensionObj = $extensionsObj->appendChild (new DOMElement('extension'));
-			$extensionObj->appendChild (new DOMAttr ('extensionKey', $extensionKey));
+			$extensionObj->appendChild (new DOMAttr ('extensionkey', $extensionKey));
+			$extensionObj->appendChild (new DOMElement ('downloadcounter', xmlentities ($extensionsTotalDownloadsArr[$extensionKey])));
 			
 			foreach ($extensionVersionsArr as $versionNumber => $extensionVersionArr) {
 				$versionObj = $extensionObj->appendChild (new DOMElement('version'));
@@ -519,7 +528,9 @@ function writeExtensionInfoToDB ($accountData, $extensionData, $filesData, $exte
 				$versionObj->appendChild (new DOMElement('title', xmlentities ($extensionVersionArr['title'])));
 				$versionObj->appendChild (new DOMElement('description', xmlentities ($extensionVersionArr['description'])));
 				$versionObj->appendChild (new DOMElement('state', xmlentities ($extensionVersionArr['state'])));
+				$versionObj->appendChild (new DOMElement('reviewstate', xmlentities ($extensionVersionArr['reviewstate'])));
 				$versionObj->appendChild (new DOMElement('category', xmlentities ($extensionVersionArr['category'])));
+				$versionObj->appendChild (new DOMElement('downloadcounter', xmlentities ($extensionVersionArr['downloadcounter'])));
 				$versionObj->appendChild (new DOMElement('lastuploaddate', $extensionVersionArr['lastuploaddate']));
 				$versionObj->appendChild (new DOMElement('uploadcomment', xmlentities ($extensionVersionArr['uploadcomment'])));
 				$versionObj->appendChild (new DOMElement('dependencies', $extensionVersionArr['dependencies']));
@@ -535,7 +546,7 @@ function writeExtensionInfoToDB ($accountData, $extensionData, $filesData, $exte
 		$extensionsObj->appendChild (new DOMComment('Index created in '.(microtime()-$trackTime).' ms'));
 		
 			// Write XML data to disc:
-		$fh = @fopen ($GLOBALS['repositoryDir'].'extensions.xml.gz', 'wb');
+		$fh = fopen ($GLOBALS['repositoryDir'].'cli-extensions.xml.gz', 'wb');
 		if (!$fh) throw new SoapFault (TX_TER_ERROR_UPLOADEXTENSION_WRITEERRORWHILEWRITINGEXTENSIONSINDEX, 'Write error while writing extensions index file: '.$GLOBALS['repositoryDir'].'extensions.xml');
 		fwrite ($fh, gzencode ($dom->saveXML(), 9));
 		fclose ($fh);
