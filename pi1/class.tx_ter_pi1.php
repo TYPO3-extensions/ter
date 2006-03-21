@@ -28,7 +28,19 @@
  *
  * @author	Robert Lemke <robert@typo3.org>
  */
- 
+/**
+ * [CLASS/FUNCTION INDEX of SCRIPT]
+ *
+ *
+ *
+ *   54: class tx_ter_pi1 extends tslib_pibase
+ *   61:     function main ($content, $conf)
+ *
+ * TOTAL FUNCTIONS: 1
+ * (This index is automatically created/updated by the extension "extdeveval")
+ *
+ */
+
 require_once(PATH_tslib.'class.tslib_pibase.php');
 require_once(t3lib_extMgm::extPath('ter').'class.tx_ter_api.php');
 
@@ -45,20 +57,20 @@ class tx_ter_pi1 extends tslib_pibase {
 	public $extensionsPID;									// Start page for extension records
 	public $repositoryDir;									// Absolute path to extension repository directory
 	public $conf;											// The FE Plugin's TS configuration
-	
+
 	function main ($content, $conf) {
 		global $TSFE;
-		
+
 		$this->pi_initPIflexForm();
 		$this->conf = $conf;
 
 		$this->extensionsPID = $conf['pid'];
 		$staticConfArr = unserialize ($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['ter']);
-		if (is_array ($staticConfArr)) {			
+		if (is_array ($staticConfArr)) {
 			$this->repositoryDir = $staticConfArr['repositoryDir'];
 			if (substr ($this->repositoryDir, -1, 1) != '/') $this->repositoryDir .= '/';
 		}
-			
+
 		$server = new SoapServer(NULL, array ('uri' => 'http://typo3.org/soap/tx_ter'));
 		$server->setClass ('tx_ter_api', $this);
 		$server->handle($GLOBALS['HTTP_RAW_POST_DATA']);

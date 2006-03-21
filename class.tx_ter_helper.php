@@ -31,9 +31,24 @@
 /**
  * [CLASS/FUNCTION INDEX of SCRIPT]
  *
+ *
+ *
+ *  103: class tx_ter_helper
+ *  114:     public function __construct($pluginObj)
+ *  127:     public function getValidUser ($accountData)
+ *  162:     public function extensionKeyIsAvailable($extensionKey)
+ *  188:     public function getExtensionKeyRecord ($extKey)
+ *  215:     public function getLatestVersionNumberOfExtension ($extensionKey)
+ *  245:     public function requestUpdateOfExtensionIndexFile()
+ *  260:     public function writeExtensionIndexfile()
+ *  358:     public function xmlentities ($string)
+ *
+ * TOTAL FUNCTIONS: 8
+ * (This index is automatically created/updated by the extension "extdeveval")
+ *
  */
 
-	// Error codes: 
+	// Error codes:
 define (TX_TER_ERROR_GENERAL_EXTREPDIRDOESNTEXIST, '100');
 define (TX_TER_ERROR_GENERAL_NOUSERORPASSWORD, '101');
 define (TX_TER_ERROR_GENERAL_USERNOTFOUND, '102');
@@ -68,9 +83,9 @@ define (TX_TER_ERROR_INCREASEEXTENSIONDOWNLOADCOUNTER_EXTENSIONVERSIONDOESNOTEXI
 define (TX_TER_ERROR_INCREASEEXTENSIONDOWNLOADCOUNTER_INCREMENTORNOTPOSITIVEINTEGER, '803');
 define (TX_TER_ERROR_INCREASEEXTENSIONDOWNLOADCOUNTER_EXTENSIONKEYDOESNOTEXIST, '804');
 
-	// Result codes: 
+	// Result codes:
 define (TX_TER_RESULT_GENERAL_OK, '10000');
-	
+
 define (TX_TER_RESULT_EXTENSIONKEYALREADYEXISTS, '10500');
 define (TX_TER_RESULT_EXTENSIONKEYDOESNOTEXIST, '10501');
 define (TX_TER_RESULT_EXTENSIONKEYNOTVALID, '10502');
@@ -79,22 +94,22 @@ define (TX_TER_RESULT_EXTENSIONSUCCESSFULLYUPLOADED, '10504');
 
 
 /**
- * TYPO3 Extension Repository, helper functions 
+ * TYPO3 Extension Repository, helper functions
  *
  * @author	Robert Lemke <robert@typo3.org>
  * @package TYPO3
  * @subpackage tx_ter_helper
  */
 class tx_ter_helper {
-	
+
 	protected	$pluginObj;
 
 	/**
 	 * Constructor
-	 * 
-	 * @param	object	$pluginObj: Reference to parent object
+	 *
+	 * @param	object		$pluginObj: Reference to parent object
 	 * @return	void
-	 * @access	public 
+	 * @access	public
 	 */
 	public function __construct($pluginObj) {
 		$this->pluginObj = $pluginObj;
@@ -102,26 +117,26 @@ class tx_ter_helper {
 
 
 	/**
-	 * This verifies the given fe_users username/password and upload password. 
+	 * This verifies the given fe_users username/password and upload password.
 	 * Either the fe_user row is returned or an exception is thrown.
 	 *
 	 * @param	object		$accountData: Account data information with username, password and upload password
 	 * @return	mixed		If success, returns array of fe_users, otherwise error string.
-	 * @access	public 
+	 * @access	public
 	 */
 	public function getValidUser ($accountData)	{
 		global $TYPO3_DB, $TSFE;
-		
+
 		if (!strlen($accountData->username) || (!strlen($accountData->password))) {
 			throw new SoapFault (TX_TER_ERROR_GENERAL_NOUSERORPASSWORD, 'No user or no password submitted.');
 		}
 
 		$res = $TYPO3_DB->exec_SELECTquery(
-			'*', 
-			'fe_users', 
+			'*',
+			'fe_users',
 			'username="'.$TYPO3_DB->quoteStr($accountData->username, 'fe_users').'"'.$TSFE->sys_page->enableFields('fe_users')
-		);		
-		
+		);
+
 		if ($row = $TYPO3_DB->sql_fetch_assoc($res)) {
 			if ($row['password'] != $accountData->password) {
 				throw new SoapFault (TX_TER_ERROR_GENERAL_WRONGPASSWORD, 'Wrong password.');
@@ -129,17 +144,47 @@ class tx_ter_helper {
 		} else {
 			throw new SoapFault (TX_TER_ERROR_GENERAL_USERNOTFOUND, 'The specified user does not exist.');
 		}
-		
+
 		return $row;
 	}
 
-	/**
-	 * Based on $extKey this returns the extension-key record.
-	 *
-	 * @param	string		$extKey: Extension key
-	 * @return	mixed		The extension key row or FALSE
-	 * @access	public 
-	 */
+
+    /**
+ * Checks if the given extension key is unique and not registered yet.
+ * Takes underscores into account, so the key "ter_ter" can't be registered
+ * if "te_rt_er" or "terter" already exist.
+ *
+ * @param	string		$extensionKey: The extension key to check
+ * @return	boolean		Returns TRUE if the extension key is unique and not used yet, otherwise FALSE
+ * @access	public
+ * @author  Elmar Hinz
+ */
+    public function extensionKeyIsAvailable($extensionKey) {
+        global $TSFE, $TYPO3_DB;
+
+		$cleanedExtensionKey = str_replace('_', '', $extensionKey);
+		$isAvailable = TRUE;
+
+		$res = $TYPO3_DB->exec_SELECTquery(
+			'extensionkey',
+			'tx_ter_extensionkeys',
+			'pid='.intval($this->pluginObj->extensionsPID)
+		);
+		while ($row = $GLOBALS['TYPO3_DB']->sql_fetch_row($res)) {
+		    if($cleanedExtensionKey === str_replace('_', '', $row[0])) {
+		        $isAvailable = FALSE;
+		    }
+		}
+		return $isAvailable;
+    }
+
+    /**
+ * Based on $extKey this returns the extension-key record.
+ *
+ * @param	string		$extKey: Extension key
+ * @return	mixed		The extension key row or FALSE
+ * @access	public
+ */
 	public function getExtensionKeyRecord ($extKey)	{
 		global $TYPO3_DB, $TSFE;
 
@@ -150,7 +195,7 @@ class tx_ter_helper {
 				AND pid='.intval($this->pluginObj->extensionsPID).
 				$TSFE->sys_page->enableFields('tx_ter_extensionkeys')
 		);
-		
+
 		if ($row = $TYPO3_DB->sql_fetch_assoc($res)) {
 			return $row;
 		}
@@ -165,11 +210,11 @@ class tx_ter_helper {
 	 *
 	 * @param	string		$extKey: Extension key
 	 * @return	mixed		The version number as a string or FALSE
-	 * @access	public 
+	 * @access	public
 	 */
 	public function getLatestVersionNumberOfExtension ($extensionKey) {
 		global $TYPO3_DB, $TSFE;
-		
+
 		$res = $TYPO3_DB->exec_SELECTquery (
 			'version',
 			'tx_ter_extensions',
@@ -179,21 +224,21 @@ class tx_ter_helper {
 		$latestVersion = FALSE;
 		while ($row = $TYPO3_DB->sql_fetch_assoc($res)) {
 			if (version_compare($row['version'], $latestVersion, '>')) {
-				$latestVersion = $row['version'];	
+				$latestVersion = $row['version'];
 			}
 		}
-		
-		return $latestVersion;	
+
+		return $latestVersion;
 	}
 
 	/**
 	 * Sets a flag so the cron job knows that the extensions.xml.gz file has to be
-	 * regenerated. Call this whenever data has changed which also exists in 
+	 * regenerated. Call this whenever data has changed which also exists in
 	 * extensions.xml.gz
-	 * 
+	 *
 	 * Note: Depending on the cron job it might take a while until the index file really
 	 *       has been updated. See "cli/build-extension-index.php" for more information
-	 * 
+	 *
 	 * @return	void
 	 * @access	public
 	 */
@@ -210,7 +255,7 @@ class tx_ter_helper {
 	 * extensions in the TER.
 	 *
 	 * @return	void
-	 * @access	public 
+	 * @access	public
 	 */
 	public function writeExtensionIndexfile()	{
 		global $TYPO3_DB;
@@ -225,7 +270,7 @@ class tx_ter_helper {
 			'tx_ter_extensions',
 			'1'
 		);
-		
+
 			// Read the extension records from the DB:
 		$extensionsAndVersionsArr = array();
 		$extensionsTotalDownloadsArr = array();
@@ -246,7 +291,7 @@ class tx_ter_helper {
 			);
 			$detailsRow = $TYPO3_DB->sql_fetch_assoc($res2);
 			if (is_array ($detailsRow)) {
-				$row = $row + $detailsRow;	
+				$row = $row + $detailsRow;
 			}
 			$extensionsAndVersionsArr [$row['extensionkey']][$row['version']] = $row;
 		}
@@ -261,11 +306,11 @@ class tx_ter_helper {
 			$extensionObj = $extensionsObj->appendChild (new DOMElement('extension'));
 			$extensionObj->appendChild (new DOMAttr ('extensionkey', $extensionKey));
 			$extensionObj->appendChild (new DOMElement ('downloadcounter', $this->xmlentities ($extensionsTotalDownloadsArr[$extensionKey])));
-			
+
 			foreach ($extensionVersionsArr as $versionNumber => $extensionVersionArr) {
 				$versionObj = $extensionObj->appendChild (new DOMElement('version'));
 				$versionObj->appendChild (new DOMAttr ('version', $versionNumber));
-				
+
 				$versionObj->appendChild (new DOMElement('title', $this->xmlentities ($extensionVersionArr['title'])));
 				$versionObj->appendChild (new DOMElement('description', $this->xmlentities ($extensionVersionArr['description'])));
 				$versionObj->appendChild (new DOMElement('state', $this->xmlentities ($extensionVersionArr['state'])));
@@ -285,7 +330,7 @@ class tx_ter_helper {
 
 		$extensionsObj->appendChild (new DOMComment('Index created at '.date("D M j G:i:s T Y")));
 		$extensionsObj->appendChild (new DOMComment('Index created in '.(microtime()-$trackTime).' ms'));
-		
+
 			// Write XML data to disc:
 		$fh = fopen ($this->pluginObj->repositoryDir.'new-extensions.xml.gz', 'wb');
 		if (!$fh) throw new SoapFault (TX_TER_ERROR_UPLOADEXTENSION_WRITEERRORWHILEWRITINGEXTENSIONSINDEX, 'Write error while writing extensions index file: '.$this->pluginObj->repositoryDir.'extensions.xml');
@@ -294,21 +339,21 @@ class tx_ter_helper {
 
 		if (!@filesize($this->pluginObj->repositoryDir.'new-extensions.xml.gz') > 0) {
 			t3lib_div::devLog	('Newly created extension index is zero bytes!', 'tx_ter_helper', 0);
-			throw new SoapFault (TX_TER_ERROR_UPLOADEXTENSION_WRITEERRORWHILEWRITINGEXTENSIONSINDEX, 'Write error while writing extensions index file (zero bytes): '.$this->pluginObj->repositoryDir.'extensions.xml');	
+			throw new SoapFault (TX_TER_ERROR_UPLOADEXTENSION_WRITEERRORWHILEWRITINGEXTENSIONSINDEX, 'Write error while writing extensions index file (zero bytes): '.$this->pluginObj->repositoryDir.'extensions.xml');
 		}
-		
+
 		@unlink ($this->pluginObj->repositoryDir.'extensions.xml.gz');
 		rename ($this->pluginObj->repositoryDir.'new-extensions.xml.gz', $this->pluginObj->repositoryDir.'extensions.xml.gz');
-		t3lib_div::writeFile ($this->pluginObj->repositoryDir.'extensions.md5', md5_file ($this->pluginObj->repositoryDir.'extensions.xml.gz'));		
-		
+		t3lib_div::writeFile ($this->pluginObj->repositoryDir.'extensions.md5', md5_file ($this->pluginObj->repositoryDir.'extensions.xml.gz'));
+
 	}
-	
+
 	/**
 	 * Equivalent to htmlentities but for XML content
 	 *
 	 * @param	string		$string: String to encode
 	 * @return	string		&,",',< and > replaced by entities
-	 * @access	public 
+	 * @access	public
 	 */
 	public function xmlentities ($string) {
 			// Until I have found a better solution for guaranteeing valid characters, I use this regex:

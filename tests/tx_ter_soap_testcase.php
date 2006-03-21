@@ -41,7 +41,7 @@
  */
 
 
-class tx_ter_testcase extends tx_t3unit_testcase {
+class tx_ter_soap_testcase extends tx_t3unit_testcase {
 
 	protected $WSDLURI;
 	protected $SOAPServiceURI;
