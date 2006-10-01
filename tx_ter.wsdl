@@ -422,7 +422,9 @@
   <wsdl:part name="extensionVersionData" type="tns:extensionVersionData"></wsdl:part>
   <wsdl:part name="incrementor" type="xsd:integer"></wsdl:part>
   </wsdl:message>
-  <wsdl:portType name="tx_ter">
+    <wsdl:message name="deleteExtensionRequest"><wsdl:part name="accountData" type="tns:accountData"></wsdl:part><wsdl:part name="extensionKey" type="xsd:string"></wsdl:part><wsdl:part name="version" type="xsd:string"></wsdl:part></wsdl:message>
+    <wsdl:message name="deleteExtensionResponse"><wsdl:part name="simpleResult" type="tns:simpleResult"></wsdl:part></wsdl:message>
+    <wsdl:portType name="tx_ter">
     <wsdl:operation name="ping">
       <wsdl:documentation>Method for basic connectivity check. Returns the given value prepended by &quot;pong&quot;.</wsdl:documentation>
       <wsdl:input message="tns:pingRequest"/>
@@ -465,7 +467,8 @@
     		message="tns:increaseExtensionDownloadCounterResponse">
     	</wsdl:output>
     </wsdl:operation>
-  </wsdl:portType>
+    <wsdl:operation name="deleteExtension"><wsdl:input message="tns:deleteExtensionRequest"></wsdl:input><wsdl:output message="tns:deleteExtensionResponse"></wsdl:output></wsdl:operation>
+    </wsdl:portType>
   <wsdl:binding name="tx_terSOAP" type="tns:tx_ter">
         <soap:binding style="rpc" transport="http://schemas.xmlsoap.org/soap/http"/>
         <wsdl:operation name="ping"><soap:operation soapAction="http://www.typo3.org/wsdl/tx_ter/ping"/><wsdl:input><soap:body use="literal" namespace="http://www.typo3.org/wsdl/tx_ter/"/></wsdl:input><wsdl:output><soap:body use="literal" namespace="http://www.typo3.org/wsdl/tx_ter/"/></wsdl:output></wsdl:operation>
@@ -477,6 +480,7 @@
         <wsdl:operation name="deleteExtensionKey"><soap:operation soapAction="http://www.typo3.org/wsdl/tx_ter/deleteExtensionKey"/><wsdl:input><soap:body use="literal" namespace="http://www.typo3.org/wsdl/tx_ter/"/></wsdl:input><wsdl:output><soap:body use="literal" namespace="http://www.typo3.org/wsdl/tx_ter/"/></wsdl:output></wsdl:operation>
         <wsdl:operation name="setReviewState"><soap:operation soapAction="http://www.typo3.org/wsdl/tx_ter/setReviewState"/><wsdl:input><soap:body use="literal" namespace="http://www.typo3.org/wsdl/tx_ter/"/></wsdl:input><wsdl:output><soap:body use="literal" namespace="http://www.typo3.org/wsdl/tx_ter/"/></wsdl:output></wsdl:operation>
         <wsdl:operation name="increaseExtensionDownloadCounter"><soap:operation soapAction="http://www.typo3.org/wsdl/tx_ter/increaseExtensionDownloadCounter"/><wsdl:input><soap:body use="literal" namespace="http://www.typo3.org/wsdl/tx_ter/"/></wsdl:input><wsdl:output><soap:body use="literal" namespace="http://www.typo3.org/wsdl/tx_ter/"/></wsdl:output></wsdl:operation>
+        <wsdl:operation name="deleteExtension"><soap:operation soapAction="http://www.typo3.org/wsdl/tx_ter/deleteExtension"/><wsdl:input><soap:body use="literal" namespace="http://www.typo3.org/wsdl/tx_ter/"/></wsdl:input><wsdl:output><soap:body use="literal" namespace="http://www.typo3.org/wsdl/tx_ter/"/></wsdl:output></wsdl:operation>
     </wsdl:binding>
   <wsdl:service name="tx_ter">
     <wsdl:port name="tx_terSOAP" binding="tns:tx_terSOAP">

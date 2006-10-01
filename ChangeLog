@@ -1,3 +1,6 @@
+01.09.06 Robert Lemke <robert@typo3.org>
+	+ Added new function "deleteExtension" which is only available for administrators
+
 21.03.06 Robert Lemke <robert@typo3.org>
 	+ Added new feature for checking extension keys with underscores provided by Elmar Hinz - thanks a lot!
 	+ Added unit tests for the new features, also provided by Elmar

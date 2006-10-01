@@ -10,7 +10,7 @@
  * is lost and you need to rebuild it.
  */
 
-die ('Inactive');
+#die ('Inactive');
 
 	// Defining circumstances for CLI mode:
 define('TYPO3_cliMode', TRUE);

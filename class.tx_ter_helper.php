@@ -83,6 +83,9 @@ define (TX_TER_ERROR_INCREASEEXTENSIONDOWNLOADCOUNTER_EXTENSIONVERSIONDOESNOTEXI
 define (TX_TER_ERROR_INCREASEEXTENSIONDOWNLOADCOUNTER_INCREMENTORNOTPOSITIVEINTEGER, '803');
 define (TX_TER_ERROR_INCREASEEXTENSIONDOWNLOADCOUNTER_EXTENSIONKEYDOESNOTEXIST, '804');
 
+define (TX_TER_ERROR_DELETEEXTENSION_ACCESS_DENIED, '900');
+define (TX_TER_ERROR_DELETEEXTENSION_EXTENSIONDOESNTEXIST, '901');
+
 	// Result codes:
 define (TX_TER_RESULT_GENERAL_OK, '10000');
 
@@ -91,6 +94,7 @@ define (TX_TER_RESULT_EXTENSIONKEYDOESNOTEXIST, '10501');
 define (TX_TER_RESULT_EXTENSIONKEYNOTVALID, '10502');
 define (TX_TER_RESULT_EXTENSIONKEYSUCCESSFULLYREGISTERED, '10503');
 define (TX_TER_RESULT_EXTENSIONSUCCESSFULLYUPLOADED, '10504');
+define (TX_TER_RESULT_EXTENSIONSUCCESSFULLYDELETED, '10505');
 
 
 /**
@@ -117,7 +121,7 @@ class tx_ter_helper {
 
 
 	/**
-	 * This verifies the given fe_users username/password and upload password.
+	 * This verifies the given fe_users username/password.
 	 * Either the fe_user row is returned or an exception is thrown.
 	 *
 	 * @param	object		$accountData: Account data information with username, password and upload password
@@ -145,6 +149,8 @@ class tx_ter_helper {
 			throw new SoapFault (TX_TER_ERROR_GENERAL_USERNOTFOUND, 'The specified user does not exist.');
 		}
 
+		$row['admin'] = (intval($this->pluginObj->conf['adminFrontendUsergroupUid']) && t3lib_div::inList($row['usergroup'], $this->pluginObj->conf['adminFrontendUsergroupUid']));
+				
 		return $row;
 	}
 
@@ -270,7 +276,6 @@ class tx_ter_helper {
 			'tx_ter_extensions',
 			'1'
 		);
-
 			// Read the extension records from the DB:
 		$extensionsAndVersionsArr = array();
 		$extensionsTotalDownloadsArr = array();
@@ -293,9 +298,8 @@ class tx_ter_helper {
 			if (is_array ($detailsRow)) {
 				$row = $row + $detailsRow;
 			}
-			$extensionsAndVersionsArr [$row['extensionkey']][$row['version']] = $row;
+			$extensionsAndVersionsArr [$row['extensionkey']]['versions'][$row['version']] = $row;
 		}
-
 			// Prepare the DOM object:
 		$dom = new DOMDocument ('1.0', 'utf-8');
 		$dom->formatOutput = TRUE;
@@ -307,10 +311,9 @@ class tx_ter_helper {
 			$extensionObj->appendChild (new DOMAttr ('extensionkey', $extensionKey));
 			$extensionObj->appendChild (new DOMElement ('downloadcounter', $this->xmlentities ($extensionsTotalDownloadsArr[$extensionKey])));
 
-			foreach ($extensionVersionsArr as $versionNumber => $extensionVersionArr) {
+			foreach ($extensionVersionsArr['versions'] as $versionNumber => $extensionVersionArr) {
 				$versionObj = $extensionObj->appendChild (new DOMElement('version'));
 				$versionObj->appendChild (new DOMAttr ('version', $versionNumber));
-
 				$versionObj->appendChild (new DOMElement('title', $this->xmlentities ($extensionVersionArr['title'])));
 				$versionObj->appendChild (new DOMElement('description', $this->xmlentities ($extensionVersionArr['description'])));
 				$versionObj->appendChild (new DOMElement('state', $this->xmlentities ($extensionVersionArr['state'])));
@@ -331,7 +334,7 @@ class tx_ter_helper {
 		$extensionsObj->appendChild (new DOMComment('Index created at '.date("D M j G:i:s T Y")));
 		$extensionsObj->appendChild (new DOMComment('Index created in '.(microtime()-$trackTime).' ms'));
 
-			// Write XML data to disc:
+			// Write XML data to disk:
 		$fh = fopen ($this->pluginObj->repositoryDir.'new-extensions.xml.gz', 'wb');
 		if (!$fh) throw new SoapFault (TX_TER_ERROR_UPLOADEXTENSION_WRITEERRORWHILEWRITINGEXTENSIONSINDEX, 'Write error while writing extensions index file: '.$this->pluginObj->repositoryDir.'extensions.xml');
 		fwrite ($fh, gzencode ($dom->saveXML(), 9));
@@ -346,6 +349,21 @@ class tx_ter_helper {
 		rename ($this->pluginObj->repositoryDir.'new-extensions.xml.gz', $this->pluginObj->repositoryDir.'extensions.xml.gz');
 		t3lib_div::writeFile ($this->pluginObj->repositoryDir.'extensions.md5', md5_file ($this->pluginObj->repositoryDir.'extensions.xml.gz'));
 
+
+			// Write serialized array file to disk:
+		$fh = fopen ($this->pluginObj->repositoryDir.'new-extensions.bin', 'wb');
+		if (!$fh) throw new SoapFault (TX_TER_ERROR_UPLOADEXTENSION_WRITEERRORWHILEWRITINGEXTENSIONSINDEX, 'Write error while writing extensions index file: '.$this->pluginObj->repositoryDir.'extensions.bin');
+		fwrite ($fh, serialize($extensionsAndVersionsArr));
+		fclose ($fh);
+
+		if (!@filesize($this->pluginObj->repositoryDir.'new-extensions.bin') > 0) {
+			t3lib_div::devLog	('Newly created extension index is zero bytes!', 'tx_ter_helper', 0);
+			throw new SoapFault (TX_TER_ERROR_UPLOADEXTENSION_WRITEERRORWHILEWRITINGEXTENSIONSINDEX, 'Write error while writing extensions index file (zero bytes): '.$this->pluginObj->repositoryDir.'extensions.bin');
+		}
+
+		@unlink ($this->pluginObj->repositoryDir.'extensions.bin');
+		rename ($this->pluginObj->repositoryDir.'new-extensions.bin', $this->pluginObj->repositoryDir.'extensions.bin');
+
 	}
 
 	/**
@@ -357,7 +375,7 @@ class tx_ter_helper {
 	 */
 	public function xmlentities ($string) {
 			// Until I have found a better solution for guaranteeing valid characters, I use this regex:
-		$string = (preg_replace('/[^\w\s"%&\[\]\(\)\.\,\;\:\/\?\{\}!\$\-\/]/','',$string));
+		$string = (preg_replace('/[^\w\s"%&\[\]\(\)\.\,\;\:\/\?\{\}!\$\-\/\@]/','',$string));
 		return str_replace ( array ( '&', '"', "'", '<', '>' ), array ( '&amp;' , '&quot;', '&apos;' , '&lt;' , '&gt;' ), $string );
 	}
 }
