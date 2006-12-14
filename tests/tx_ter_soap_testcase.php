@@ -28,7 +28,10 @@
  * Notes: 
  *    
  *    - Most of the tests assume that there exists a FE user "t3unit"
- *      with password "t3unitpassword"
+ *      with password "t3unitpassword". Some also require a user "t3unit-2"
+ *      with password "t3unitpassword".
+ * 
+ *    - The extension key "nothing" must be owned by user "t3unit"
  * 
  *    - Although the tx_ter_api takes the PID of extension keys and
  *      extensions into account, these tests don't. Just make sure that
@@ -791,7 +794,7 @@ class tx_ter_soap_testcase extends tx_t3unit_testcase {
 	 *
 	 *********************************************************/
 
-	public function test_incremendExtensionDownloadCounter_all () {
+	public function test_incrementExtensionDownloadCounter_all () {
 		global $TYPO3_DB;
 
 		$soapClientObj = new SoapClient ($this->WSDLURI, array ('trace' => 1, 'exceptions' => 1));
@@ -810,17 +813,27 @@ class tx_ter_soap_testcase extends tx_t3unit_testcase {
 			self::fail ('SoapFault Exception (#'.$exception->faultcode.'): '.$exception->faultstring);
 		}	
 		self::assertTrue (is_array ($result) && ($result['resultCode'] == 10504), 'Upload of extension was not successful (result: '.$result['resultCode'].')');
-
-		$extensionVersionData = array (
-			'extensionKey' => $extensionData['extensionKey'],
-			'version' => $result['version'],
+	
+		$extensionVersionsAndIncrementors = array (
+			'extensionVersionAndIncrementor' => array(
+				array (
+					'extensionKey' => $extensionData['extensionKey'],
+					'version' => $result['version'],
+					'downloadCountIncrementor' => 5
+				),
+#				array (
+#					'extensionKey' => 'templavoila',
+#					'version' => '3.4.0',
+#					'downloadCountIncrementor' => 5
+#				)
+			)
 		);
 				
 			// Save the total downloads counter of the extension key:
 		$res = $TYPO3_DB->exec_SELECTquery (
 			'downloadcounter',
 			'tx_ter_extensionkeys',
-			'extensionkey ="'.$TYPO3_DB->quoteStr($extensionVersionData['extensionKey'], 'tx_ter_extensions').'"'
+			'extensionkey ="'.$TYPO3_DB->quoteStr($extensionVersionsAndIncrementors['extensionVersionAndIncrementor'][0]['extensionKey'], 'tx_ter_extensions').'"'
 		);
 		$totalCounterRow = $TYPO3_DB->sql_fetch_assoc ($res);
 		$totalCounter = $totalCounterRow['downloadcounter'];
@@ -829,8 +842,8 @@ class tx_ter_soap_testcase extends tx_t3unit_testcase {
 		$res = $TYPO3_DB->exec_SELECTquery (
 			'downloadcounter',
 			'tx_ter_extensions',
-			'extensionkey ="'.$TYPO3_DB->quoteStr($extensionVersionData['extensionKey'], 'tx_ter_extensions').'" AND '.
-				'version ="'.$TYPO3_DB->quoteStr($extensionVersionData['version'], 'tx_ter_extensions').'"'
+			'extensionkey ="'.$TYPO3_DB->quoteStr($extensionVersionsAndIncrementors['extensionVersionAndIncrementor'][0]['extensionKey'], 'tx_ter_extensions').'" AND '.
+				'version ="'.$TYPO3_DB->quoteStr($extensionVersionsAndIncrementors['extensionVersionAndIncrementor'][0]['version'], 'tx_ter_extensions').'"'
 		);
 		$versionCounterRow = $TYPO3_DB->sql_fetch_assoc ($res);
 		$versionCounter = $versionCounterRow['downloadcounter'];
@@ -843,12 +856,12 @@ class tx_ter_soap_testcase extends tx_t3unit_testcase {
 		);
 		
 		try {
-			$resultArr = $soapClientObj->increaseExtensionDownloadCounter ($accountData, $extensionVersionData, 5);
+			$resultArr = $soapClientObj->increaseExtensionDownloadCounters ($accountData, $extensionVersionsAndIncrementors);
 			self::fail ('increasing the extension download counter should throw an exception but it didn\'t!');
 		} catch (SoapFault $exception) {
 		}
 		
-		self::assertTrue ($exception->faultcode == 801, 'increasing download counter with invalid user did throw an exception but with the wrong fault code ('.$exception->faultcode.' '.$exception->faultstring.')');
+		self::assertTrue ($exception->faultcode == 801, 'increasing download counters with invalid user did throw an exception but with the wrong fault code ('.$exception->faultcode.' '.$exception->faultstring.')');
 
 			// Try again (twice) with user who belongs to the correct usergroup:
 		$accountData = array(
@@ -857,29 +870,31 @@ class tx_ter_soap_testcase extends tx_t3unit_testcase {
 		);
 		
 		try {
-			$resultArr = $soapClientObj->increaseExtensionDownloadCounter ($accountData, $extensionVersionData, 5);
-			$resultArr = $soapClientObj->increaseExtensionDownloadCounter ($accountData, $extensionVersionData, 15);
+			$resultArr = $soapClientObj->increaseExtensionDownloadCounters ($accountData, $extensionVersionsAndIncrementors);
+			$extensionVersionsAndIncrementors['extensionVersionAndIncrementor'][0]['downloadCountIncrementor'] = 15;
+			$resultArr = $soapClientObj->increaseExtensionDownloadCounters ($accountData, $extensionVersionsAndIncrementors);
 		} catch (SoapFault $exception) {
 			self::fail ('SoapFault Exception (#'.$exception->faultcode.'): '.$exception->faultstring);
 		}
 
-		self::assertTrue (is_array ($resultArr) && ($resultArr['resultCode'] == 10000), 'increasing download counter was not successful (result: '.$resultArr['resultCode'].')');
+		self::assertTrue (is_array ($resultArr) && ($resultArr['resultCode'] == 10000), 'increasing download counters was not successful (result: '.$resultArr['resultCode'].')' .  t3lib_div::view_array($resultArr));
 
 			// Try again with negative incrementor
+		$extensionVersionsAndIncrementors['extensionVersionAndIncrementor'][0]['downloadCountIncrementor'] = -3;
 		try {
-			$resultArr = $soapClientObj->increaseExtensionDownloadCounter ($accountData, $extensionVersionData, -3);
-			self::fail ('increasing the extension download counter should throw an exception but it didn\'t!');
+			$resultArr = $soapClientObj->increaseExtensionDownloadCounters ($accountData, $extensionVersionsAndIncrementors['extensionVersionAndIncrementor'][0]);
+			self::fail ('increasing the extension download counters should throw an exception but it didn\'t!');
 		} catch (SoapFault $exception) {
 		}
 
-		self::assertTrue (is_array ($resultArr) && ($resultArr['resultCode'] == 10000), 'increasing download counter was not successful (result: '.$resultArr['resultCode'].')');
+		self::assertTrue (is_array ($resultArr) && ($resultArr['resultCode'] == 10000), 'increasing download counters was not successful (result: '.$resultArr['resultCode'].')');
 		
 			// Check if the counter really has been changed in the database:
 		$res = $TYPO3_DB->exec_SELECTquery (
 			'downloadcounter',
 			'tx_ter_extensions',
-			'extensionkey ="'.$TYPO3_DB->quoteStr($extensionVersionData['extensionKey'], 'tx_ter_extensions').'" AND '.
-				'version ="'.$TYPO3_DB->quoteStr($extensionVersionData['version'], 'tx_ter_extensions').'"'
+			'extensionkey ="'.$TYPO3_DB->quoteStr($extensionVersionsAndIncrementors['extensionVersionAndIncrementor'][0]['extensionKey'], 'tx_ter_extensions').'" AND '.
+				'version ="'.$TYPO3_DB->quoteStr($extensionVersionsAndIncrementors['extensionVersionAndIncrementor'][0]['version'], 'tx_ter_extensions').'"'
 		);
 		if (!$res) self::fail ('No MySQL result while checking if extension download counter was correctly increased in the DB');
 		
@@ -890,7 +905,7 @@ class tx_ter_soap_testcase extends tx_t3unit_testcase {
 		$res = $TYPO3_DB->exec_SELECTquery (
 			'downloadcounter',
 			'tx_ter_extensionkeys',
-			'extensionkey ="'.$TYPO3_DB->quoteStr($extensionVersionData['extensionKey'], 'tx_ter_extensions').'"'
+			'extensionkey ="'.$TYPO3_DB->quoteStr($extensionVersionsAndIncrementors['extensionVersionAndIncrementor'][0]['extensionKey'], 'tx_ter_extensions').'"'
 		);
 		if (!$res) self::fail ('No MySQL result while checking if extension download counter was correctly increased in the DB');
 		
@@ -918,7 +933,8 @@ class tx_ter_soap_testcase extends tx_t3unit_testcase {
 	protected function createFixture_uploadExtension (&$accountData, &$extensionData, &$filesData) {
 		$dataArr = unserialize (file_get_contents(t3lib_extMgm::extPath('ter').'tests/fixtures/fixture_extuploaddataarray_zipped.dat'));
 		$dataBlobArr = unserialize (gzuncompress($dataArr['datablob']));
-
+		$specialCharacters = file_get_contents(t3lib_extMgm::extPath('ter').'tests/fixtures/special_characters_utf8.txt');
+		
 		$accountData = array (
 			'username' => 't3unit',
 			'password' => 't3unitpassword',
@@ -928,13 +944,13 @@ class tx_ter_soap_testcase extends tx_t3unit_testcase {
 			'extensionKey' => $dataArr['extension_key'],
 			'version' => $dataArr['version'],
 			'metaData' => array(
-				'title' => 'Nothing: (äöüæøåñè<&) <em>xss</em>',
-				'description' => 'This is the nothing extension with some more special characters: (äöüæøåñè<&) <em>xss</em>',
+				'title' => 'Nothing V' . $dataArr['version'] . ' ' . $specialCharacters,
+				'description' => 'This is the nothing extension with some special characters: ' . $specialCharacters,
 				'category' => $dataArr['emconf_category'],
 				'state' => $dataArr['emconf_state'],
-				'authorName' => $dataArr['emconf_author'].'(äöüæøåñè<&) <em>xss</em>',
+				'authorName' => $dataArr['emconf_author'].' (' . $specialCharacters . ')',
 				'authorEmail' => 'nothing@typo3.org',
-				'authorCompany' => 'my company (äöüæøåñè<&) <em>xss</em>',
+				'authorCompany' => 'my company (' . $specialCharacters .')',
 			),
 			'technicalData' => array (
 				'dataSize' => 56789,
@@ -967,8 +983,8 @@ class tx_ter_soap_testcase extends tx_t3unit_testcase {
 				'codeLines' => 1234,
 				'codeBytes' => 56789,
 				'codingGuidelinesCompliance' => 'CGL370',
-				'codingGuidelinesComplianceNote' => 'some CGL compliance notes (äöüæøåñè<&) <em>xss</em>',
-				'uploadComment' => 'Uploaded by T3Unit (äöüæøåñè<&) <em>xss</em>',
+				'codingGuidelinesComplianceNote' => 'some CGL compliance notes (' . $specialCharacters .')',
+				'uploadComment' => 'Uploaded by T3Unit (' . $specialCharacters .')',
 				'techInfo' => $dataArr['techinfo'],
 			),
 

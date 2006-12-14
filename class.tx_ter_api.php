@@ -395,17 +395,17 @@ class tx_ter_api {
 	}
 
 	/**
-	 * Increases the download counter of an extension version
+	 * Increases the download counters of several extension version
 	 *
 	 * @param	object		$accountData: A valid username and password
-	 * @param	object		$extensionVersionData: The extension key and version number
-	 * @param	integer		$incrementor: The number by which the counter shall be incremented
+	 * @param	object		$extensionVersionsAndIncrementors: An array of extension keys, version numbers and the incrementor
 	 * @return	object		simpleResponse-object. A SoapFault exception is thrown if a fatal error ocurred.
 	 * @access	public
 	 * @since	2.0.0
 	 */
-	public function increaseExtensionDownloadCounter ($accountData, $extensionVersionData, $incrementor) {
+	public function increaseExtensionDownloadCounters ($accountData, $extensionVersionsAndIncrementors) {
 		global $TSFE, $TYPO3_DB;
+		$errorMessages = array();
 
 		$userRecordArr = $this->helperObj->getValidUser ($accountData);
 		$mirrorsFrontendUsergroupUid = intval($this->parentObj->conf['mirrorsFrontendUsergroupUid']);
@@ -413,16 +413,36 @@ class tx_ter_api {
 		if ($mirrorsFrontendUsergroupUid == 0) throw new SoapFault (TX_TER_ERROR_INCREASEEXTENSIONDOWNLOADCOUNTER_NOUSERGROUPDEFINED, 'Warning: No usergroup for mirrors has been defined on the server side. Aborting ...');
 		if (!t3lib_div::inList($userRecordArr['usergroup'], $mirrorsFrontendUsergroupUid)) throw new SoapFault (TX_TER_ERROR_INCREASEEXTENSIONDOWNLOADCOUNTER_ACCESSDENIED, 'Access denied.');
 
-		if ((integer)$incrementor !== abs((integer)($incrementor))) throw new SoapFault (TX_TER_ERROR_INCREASEEXTENSIONDOWNLOADCOUNTER_INCREMENTORNOTPOSITIVEINTEGER, 'The incrementor must be a positive integer value.');
+		try {
+			if (is_array($extensionVersionsAndIncrementors->extensionVersionAndIncrementor)) {
+				foreach ($extensionVersionsAndIncrementors->extensionVersionAndIncrementor as $extensionVersionAndIncrementor) {
+						$this->increaseExtensionDownloadCounter_increaseCounterInDB($extensionVersionAndIncrementor);
+				}
+			} else {
+				$extensionVersionAndIncrementor = $extensionVersionsAndIncrementors->extensionVersionAndIncrementor;
+				$this->increaseExtensionDownloadCounter_increaseCounterInDB($extensionVersionAndIncrementor);
+			}
+		} catch (SoapFault $exception) {
+				$errorMessages[] = '['.$extensionVersionAndIncrementor->extensionKey.']['.$extensionVersionAndIncrementor->version.'] '.$exception->faultstring;
+		}
 
-		$this->increaseExtensionDownloadCounter_increaseCounterInDB($extensionVersionData, $incrementor);
-
+			// Update extension index file
 		$this->helperObj->requestUpdateOfExtensionIndexFile();
 
-		return array (
-			'resultCode' => TX_TER_RESULT_GENERAL_OK,
-			'resultMessages' => array()
-		);
+			// Return results including list of error messages if any
+		if (count($errorMessages) > 0) {
+			$result = array (
+				'resultCode' => TX_TER_RESULT_ERRORS_OCCURRED,
+				'resultMessages' => $errorMessages
+			);
+		}
+		else {
+			$result = array (
+				'resultCode' => TX_TER_RESULT_GENERAL_OK,
+				'resultMessages' => array()
+			);
+		}
+		return $result;
 	}
 
 
@@ -939,25 +959,26 @@ class tx_ter_api {
 	 * Reads, increases and writes the download counter of an extension version
 	 * into the database.
 	 *
-	 * @param	object		$extensionVersionData: Extension key and version number
-	 * @param	object		$incrementor: Number by which the counter shall be increaseed
+	 * @param	object		$extensionVersionDataAndIncrementor: Extension key and version number and the download count incrementor
 	 * @return	void
 	 * @access	protected
 	 */
-	protected function increaseExtensionDownloadCounter_increaseCounterInDB ($extensionVersionData, $incrementor) {
+	protected function increaseExtensionDownloadCounter_increaseCounterInDB ($extensionVersionDataAndIncrementor) {
 		global $TYPO3_DB, $TSFE;
 
 		$res = $TYPO3_DB->exec_SELECTquery (
 			'uid, downloadcounter',
 			'tx_ter_extensions',
-			'extensionkey ="'.$TYPO3_DB->quoteStr($extensionVersionData->extensionKey, 'tx_ter_extensions').'" AND '.
-				'version ="'.$TYPO3_DB->quoteStr($extensionVersionData->version, 'tx_ter_extensions').'"'
+			'extensionkey ="'.$TYPO3_DB->quoteStr($extensionVersionDataAndIncrementor->extensionKey, 'tx_ter_extensions').'" AND '.
+				'version ="'.$TYPO3_DB->quoteStr($extensionVersionDataAndIncrementor->version, 'tx_ter_extensions').'"'
 		);
 		if (!$res) throw new SoapFault (TX_TER_ERROR_GENERAL_DATABASEERROR, 'Database error while searching for extension record.');
 		if ($TYPO3_DB->sql_num_rows($res) != 1) throw new SoapFault (TX_TER_ERROR_INCREASEEXTENSIONDOWNLOADCOUNTER_EXTENSIONVERSIONDOESNOTEXIST, 'Extension version does not exist.');
 
 		$currentRow = $TYPO3_DB->sql_fetch_assoc ($res);
-		$newCounter = intval($currentRow['downloadcounter']) + (integer)($incrementor);
+		$incrementor = (integer)($extensionVersionDataAndIncrementor->downloadCountIncrementor);
+		if ($incrementor !== abs($incrementor)) throw new SoapFault (TX_TER_ERROR_INCREASEEXTENSIONDOWNLOADCOUNTER_INCREMENTORNOTPOSITIVEINTEGER, 'The incrementor must be a positive integer value.');
+		$newCounter = intval($currentRow['downloadcounter']) + $incrementor;
 
 		$res = $TYPO3_DB->exec_UPDATEquery (
 			'tx_ter_extensions',
@@ -969,13 +990,13 @@ class tx_ter_api {
 		$res = $TYPO3_DB->exec_SELECTquery (
 			'uid, downloadcounter',
 			'tx_ter_extensionkeys',
-			'extensionkey ="'.$TYPO3_DB->quoteStr($extensionVersionData->extensionKey, 'tx_ter_extensions').'"'
+			'extensionkey ="'.$TYPO3_DB->quoteStr($extensionVersionDataAndIncrementor->extensionKey, 'tx_ter_extensions').'"'
 		);
 		if (!$res) throw new SoapFault (TX_TER_ERROR_GENERAL_DATABASEERROR, 'Database error while searching for extension key record.');
 		if ($TYPO3_DB->sql_num_rows($res) != 1) throw new SoapFault (TX_TER_ERROR_INCREASEEXTENSIONDOWNLOADCOUNTER_EXTENSIONKEYDOESNOTEXIST, 'Extension key does not exist.');
 
 		$currentRow = $TYPO3_DB->sql_fetch_assoc ($res);
-		$newCounter = intval($currentRow['downloadcounter']) + (integer)($incrementor);
+		$newCounter = intval($currentRow['downloadcounter']) + $incrementor;
 
 		$res = $TYPO3_DB->exec_UPDATEquery (
 			'tx_ter_extensionkeys',
