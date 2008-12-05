@@ -48,6 +48,11 @@
  *
  */
 
+	// Make sure that we are executed only in TYPO3 context
+if (!defined ('TYPO3_MODE')) die ('Access denied.');
+
+require_once t3lib_extMgm::extPath('t3sec_saltedpw').'res/lib/class.tx_t3secsaltedpw_phpass.php';
+
 	// Error codes:
 define (TX_TER_ERROR_GENERAL_EXTREPDIRDOESNTEXIST, '100');
 define (TX_TER_ERROR_GENERAL_NOUSERORPASSWORD, '101');
@@ -143,7 +148,10 @@ class tx_ter_helper {
 		);
 
 		if ($row = $TYPO3_DB->sql_fetch_assoc($res)) {
-			if ($row['password'] != $accountData->password) {
+			$objPHPass   = t3lib_div::makeInstance('tx_t3secsaltedpw_phpass');
+				// we do not consider 'C' or 'M' prefixed salted password hashes
+				// as password strings on typo3.org are not updated ones
+			if ($row['password'] !== $accountData->password && !$objPHPass->checkPassword($accountData->password, $row['password'])) {
 				throw new SoapFault (TX_TER_ERROR_GENERAL_WRONGPASSWORD, 'Wrong password.');
 			}
 		} else {

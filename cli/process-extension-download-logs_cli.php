@@ -36,7 +36,7 @@
  * 
  * Don't forget to add the parameter --dry-run if you're just testing!
  *  
- * $Id: $
+ * $Id$
  *
  * @author	Francois Suter <fsuter@cobweb.ch>
  * @author	Robert Lemke <robert@typo3.org>
@@ -59,7 +59,7 @@ function __autoload( $className ) {
 $input = new ezcConsoleInput();
 $output = new ezcConsoleOutput();
 
-$output->outputText(chr(10) . 'TER extension download logfile analyzer $Id: $'.chr(10));
+$output->outputText(chr(10) . 'TER extension download logfile analyzer $Id$'.chr(10));
 
 $options = array(
 	'pathToTER' => $input->registerOption (
