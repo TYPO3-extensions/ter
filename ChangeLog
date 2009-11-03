@@ -1,3 +1,6 @@
+Version 2.0.5, 03.11.09 Sebastian Kurfürst <sebastian@typo3.org>
+	* Added more verbose logging to tx_ter_api::increaseExtensionDownloadCounter
+
 Version 2.0.4, 24.11.08 Michael Stucki <michael@typo3.org>
 	# Bug fix: ter was not using PHPass (ext:t3sec_salted) for user authentication (patch by Marcus Krause <marcus#exp2008@t3sec.info>)
 

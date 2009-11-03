@@ -406,12 +406,19 @@ class tx_ter_api {
 	public function increaseExtensionDownloadCounters ($accountData, $extensionVersionsAndIncrementors) {
 		global $TSFE, $TYPO3_DB;
 		$errorMessages = array();
+		t3lib_div::devLog('DownloadCounter: Trying to increase extension download counters - user: ' . $accountData['username'], 'tx_ter_api', 0. $extensionVersionsAndIncrementors);
 
 		$userRecordArr = $this->helperObj->getValidUser ($accountData);
 		$mirrorsFrontendUsergroupUid = intval($this->parentObj->conf['mirrorsFrontendUsergroupUid']);
 
-		if ($mirrorsFrontendUsergroupUid == 0) throw new SoapFault (TX_TER_ERROR_INCREASEEXTENSIONDOWNLOADCOUNTER_NOUSERGROUPDEFINED, 'Warning: No usergroup for mirrors has been defined on the server side. Aborting ...');
-		if (!t3lib_div::inList($userRecordArr['usergroup'], $mirrorsFrontendUsergroupUid)) throw new SoapFault (TX_TER_ERROR_INCREASEEXTENSIONDOWNLOADCOUNTER_ACCESSDENIED, 'Access denied.');
+		if ($mirrorsFrontendUsergroupUid == 0) {
+			t3lib_div::devLog('DownloadCounter: No usergroup for mirrors has been defined on the server side. Aborting ...', 'tx_ter_api', 3);
+			throw new SoapFault (TX_TER_ERROR_INCREASEEXTENSIONDOWNLOADCOUNTER_NOUSERGROUPDEFINED, 'Warning: No usergroup for mirrors has been defined on the server side. Aborting ...');
+		}
+		if (!t3lib_div::inList($userRecordArr['usergroup'], $mirrorsFrontendUsergroupUid)) {
+			t3lib_div::devLog('DownloadCounter: Access denied for user ' . $accountData['username'], 'tx_ter_api', 3, $userRecordArray);
+			throw new SoapFault (TX_TER_ERROR_INCREASEEXTENSIONDOWNLOADCOUNTER_ACCESSDENIED, 'Access denied.');
+		}
 
 		try {
 			if (is_array($extensionVersionsAndIncrementors->extensionVersionAndIncrementor)) {
@@ -431,12 +438,14 @@ class tx_ter_api {
 
 			// Return results including list of error messages if any
 		if (count($errorMessages) > 0) {
+			t3lib_div::devLog('DownloadCounter: Errors occured for user "' . $accountData['username'] . '".', 'tx_ter_api', 2, $errorMessages);
 			$result = array (
 				'resultCode' => TX_TER_RESULT_ERRORS_OCCURRED,
 				'resultMessages' => $errorMessages
 			);
 		}
 		else {
+			t3lib_div::devLog('DownloadCounter: Everything OK. User "' . $accountData['username'] . '".', 'tx_ter_api', -1);
 			$result = array (
 				'resultCode' => TX_TER_RESULT_GENERAL_OK,
 				'resultMessages' => array()
