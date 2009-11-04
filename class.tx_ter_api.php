@@ -406,7 +406,7 @@ class tx_ter_api {
 	public function increaseExtensionDownloadCounters ($accountData, $extensionVersionsAndIncrementors) {
 		global $TSFE, $TYPO3_DB;
 		$errorMessages = array();
-		t3lib_div::devLog('DownloadCounter: Trying to increase extension download counters - user: ' . $accountData['username'], 'tx_ter_api', 0. $extensionVersionsAndIncrementors);
+		t3lib_div::devLog('DownloadCounter: Trying to increase extension download counters - user: ' . $accountData['username'], 'tx_ter_api', 0, $extensionVersionsAndIncrementors);
 
 		$userRecordArr = $this->helperObj->getValidUser ($accountData);
 		$mirrorsFrontendUsergroupUid = intval($this->parentObj->conf['mirrorsFrontendUsergroupUid']);
