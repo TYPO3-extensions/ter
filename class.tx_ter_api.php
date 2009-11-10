@@ -407,7 +407,7 @@ class tx_ter_api {
 		global $TSFE, $TYPO3_DB;
 		$errorMessages = array();
 		
-		t3lib_div::devLog('DownloadCounter: Trying to increase extension download counters - user "' . $accountData->username . '" connected from IP "' . t3lib_div::getIndpEnv('REMOTE_ADDR') . '"', 'tx_ter_api', 0);
+		t3lib_div::devLog('DownloadCounter: Trying to increase extension download counters - user "' . $accountData->username . '" connected from IP "' . t3lib_div::getIndpEnv('REMOTE_ADDR') . '" - number of results: ' . count($extensionVersionsAndIncrementors->extensionVersionAndIncrementor), 'tx_ter_api', 0);
 
 		$userRecordArr = $this->helperObj->getValidUser($accountData);
 		$mirrorsFrontendUsergroupUid = intval($this->parentObj->conf['mirrorsFrontendUsergroupUid']);
@@ -421,19 +421,27 @@ class tx_ter_api {
 			throw new SoapFault (TX_TER_ERROR_INCREASEEXTENSIONDOWNLOADCOUNTER_ACCESSDENIED, 'Access denied.');
 		}
 
-		try {
-			if (is_array($extensionVersionsAndIncrementors->extensionVersionAndIncrementor)) {
-				foreach ($extensionVersionsAndIncrementors->extensionVersionAndIncrementor as $extensionVersionAndIncrementor) {
-						$this->increaseExtensionDownloadCounter_increaseCounterInDB($extensionVersionAndIncrementor);
+		$counter = 0;
+		if (is_array($extensionVersionsAndIncrementors->extensionVersionAndIncrementor)) {
+			foreach ($extensionVersionsAndIncrementors->extensionVersionAndIncrementor as $extensionVersionAndIncrementor) {
+				try {
+					$this->increaseExtensionDownloadCounter_increaseCounterInDB($extensionVersionAndIncrementor);
+					$counter++;
+				} catch (SoapFault $exception) {
+					$errorMessages[] = '['.$extensionVersionAndIncrementor->extensionKey.']['.$extensionVersionAndIncrementor->version.'] '.$exception->faultstring;
 				}
-			} else {
+			}
+		} else {
+			try {
 				$extensionVersionAndIncrementor = $extensionVersionsAndIncrementors->extensionVersionAndIncrementor;
 				$this->increaseExtensionDownloadCounter_increaseCounterInDB($extensionVersionAndIncrementor);
-			}
-		} catch (SoapFault $exception) {
+				$counter++;
+			} catch (SoapFault $exception) {
 				$errorMessages[] = '['.$extensionVersionAndIncrementor->extensionKey.']['.$extensionVersionAndIncrementor->version.'] '.$exception->faultstring;
+			}
 		}
-
+	
+		t3lib_div::devLog('DownloadCounter: Increased download counter for ' . $counter . ' extensions. User "' . $accountData->username . '".', 'tx_ter_api', 0);
 			// Update extension index file
 		$this->helperObj->requestUpdateOfExtensionIndexFile();
 
