@@ -407,7 +407,7 @@ class tx_ter_api {
 		global $TSFE, $TYPO3_DB;
 		$errorMessages = array();
 		
-		t3lib_div::devLog('DownloadCounter: Trying to increase extension download counters - user: ' . $accountData->username, 'tx_ter_api', 0, $this->object2array($extensionVersionsAndIncrementors->extensionVersionAndIncrementor));
+		t3lib_div::devLog('DownloadCounter: Trying to increase extension download counters - user: ' . $accountData->username, 'tx_ter_api', 0);
 
 		$userRecordArr = $this->helperObj->getValidUser($accountData);
 		$mirrorsFrontendUsergroupUid = intval($this->parentObj->conf['mirrorsFrontendUsergroupUid']);
@@ -1014,24 +1014,6 @@ class tx_ter_api {
 			array('downloadcounter' => $newCounter)
 		);
 		if (!$res) throw new SoapFault (TX_TER_ERROR_GENERAL_DATABASEERROR, 'Database error while updating extension total download counter.');
-	}
-
-	/**
-	 * Transforms a traversable into its array representation.
-	 * We need this in order to convert stdClass to array, so that debugging will work.
-	 *
-	 * @param mixed $object the object / array to convert
-	 * @return array
-	 */
-	 private function object2array($object) {
-		if (is_object($object) || is_array($object)) {
-			foreach ($object as $key => $value) {
-				$array[$key] = $this->object2array($value);
-			}
-		} else {
-			$array = $object;
-		}
-		return $array;
 	}
 }
 ?>
