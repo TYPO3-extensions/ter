@@ -406,9 +406,10 @@ class tx_ter_api {
 	public function increaseExtensionDownloadCounters ($accountData, $extensionVersionsAndIncrementors) {
 		global $TSFE, $TYPO3_DB;
 		$errorMessages = array();
-		t3lib_div::devLog('DownloadCounter: Trying to increase extension download counters - user: ' . $accountData['username'], 'tx_ter_api', 0, $extensionVersionsAndIncrementors);
+		
+		t3lib_div::devLog('DownloadCounter: Trying to increase extension download counters - user: ' . $accountData->username, 'tx_ter_api', 0, $this->object2array($extensionVersionsAndIncrementors->extensionVersionAndIncrementor));
 
-		$userRecordArr = $this->helperObj->getValidUser ($accountData);
+		$userRecordArr = $this->helperObj->getValidUser($accountData);
 		$mirrorsFrontendUsergroupUid = intval($this->parentObj->conf['mirrorsFrontendUsergroupUid']);
 
 		if ($mirrorsFrontendUsergroupUid == 0) {
@@ -416,7 +417,7 @@ class tx_ter_api {
 			throw new SoapFault (TX_TER_ERROR_INCREASEEXTENSIONDOWNLOADCOUNTER_NOUSERGROUPDEFINED, 'Warning: No usergroup for mirrors has been defined on the server side. Aborting ...');
 		}
 		if (!t3lib_div::inList($userRecordArr['usergroup'], $mirrorsFrontendUsergroupUid)) {
-			t3lib_div::devLog('DownloadCounter: Access denied for user ' . $accountData['username'], 'tx_ter_api', 3, $userRecordArray);
+			t3lib_div::devLog('DownloadCounter: Access denied for user ' . $accountData->username, 'tx_ter_api', 3, $userRecordArr);
 			throw new SoapFault (TX_TER_ERROR_INCREASEEXTENSIONDOWNLOADCOUNTER_ACCESSDENIED, 'Access denied.');
 		}
 
@@ -438,14 +439,14 @@ class tx_ter_api {
 
 			// Return results including list of error messages if any
 		if (count($errorMessages) > 0) {
-			t3lib_div::devLog('DownloadCounter: Errors occured for user "' . $accountData['username'] . '".', 'tx_ter_api', 2, $errorMessages);
+			t3lib_div::devLog('DownloadCounter: Errors occured for user "' . $accountData->username . '".', 'tx_ter_api', 2, $errorMessages);
 			$result = array (
 				'resultCode' => TX_TER_RESULT_ERRORS_OCCURRED,
 				'resultMessages' => $errorMessages
 			);
 		}
 		else {
-			t3lib_div::devLog('DownloadCounter: Everything OK. User "' . $accountData['username'] . '".', 'tx_ter_api', -1);
+			t3lib_div::devLog('DownloadCounter: Everything OK. User "' . $accountData->username . '".', 'tx_ter_api', -1);
 			$result = array (
 				'resultCode' => TX_TER_RESULT_GENERAL_OK,
 				'resultMessages' => array()
@@ -1015,6 +1016,22 @@ class tx_ter_api {
 		if (!$res) throw new SoapFault (TX_TER_ERROR_GENERAL_DATABASEERROR, 'Database error while updating extension total download counter.');
 	}
 
+	/**
+	 * Transforms a traversable into its array representation.
+	 * We need this in order to convert stdClass to array, so that debugging will work.
+	 *
+	 * @param mixed $object the object / array to convert
+	 * @return array
+	 */
+	 private function object2array($object) {
+		if (is_object($object) || is_array($object)) {
+			foreach ($object as $key => $value) {
+				$array[$key] = $this->object2array($value);
+			}
+		} else {
+			$array = $object;
+		}
+		return $array;
+	}
 }
-
 ?>

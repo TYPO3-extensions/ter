@@ -259,7 +259,9 @@ foreach ($downloadCounter as $extensionKey => $versionCounters) {
 }
 
 	// SOAP call to TER
-$soapClient = new SoapClient($options['WSDLURI']->value);
+$wsdlData = file_get_contents($options['WSDLURI']->value);
+file_put_contents('/tmp/typo3org_wsdl.xml', $wsdlData);
+$soapClient = new SoapClient('/tmp/typo3org_wsdl.xml');
 if ($options['dryrun']->value !== FALSE) {
 	$output->outputText('Dry run - checking the SOAP connection: ');
 	try {
