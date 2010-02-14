@@ -1,3 +1,5 @@
+Version 2.0.6, 14.02.10 Marcus Krause <marcus#exp2010@t3sec.info>
+
 	# Fixed bug #13537: getExtensionKeys result contains an invalid type value
 	# Fixed bug #13535: WSDL not valid - SOAP-ENC namespace missing
 
