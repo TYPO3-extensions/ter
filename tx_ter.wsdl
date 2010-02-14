@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <wsdl:definitions name="tx_ter" targetNamespace="http://www.typo3.org/wsdl/tx_ter/" xmlns:tns="http://www.typo3.org/wsdl/tx_ter/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/">
-    <wsdl:types><xsd:schema targetNamespace="http://www.typo3.org/wsdl/tx_ter/" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    <wsdl:types><xsd:schema targetNamespace="http://www.typo3.org/wsdl/tx_ter/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:SOAP-ENC="http://schemas.xmlsoap.org/soap/encoding/">
+    <xsd:import namespace="http://schemas.xmlsoap.org/soap/encoding/" />
 	<xsd:complexType name="accountData">
 		<xsd:sequence minOccurs="1" maxOccurs="1">
 			<xsd:element name="username" type="xsd:string">
