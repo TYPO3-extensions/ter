@@ -400,7 +400,7 @@
         <wsdl:part name="registerExtensionKeyData" type="tns:registerExtensionKeyData"></wsdl:part>
   </wsdl:message>
   <wsdl:message name="getExtensionKeysResponse">
-  	<wsdl:part name="getExtensionKeysResponse" type="tns:extensionKeysData"></wsdl:part>
+  	<wsdl:part name="getExtensionKeysResponse" type="tns:getExtensionKeysResponse"></wsdl:part>
   </wsdl:message>
   <wsdl:message name="getExtensionKeysRequest">
   	<wsdl:part name="accountData" type="tns:accountData"></wsdl:part>

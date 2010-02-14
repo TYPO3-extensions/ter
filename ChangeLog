@@ -1,3 +1,4 @@
+	# Fixed bug #13537: getExtensionKeys result contains an invalid type value
 	# Fixed bug #13535: WSDL not valid - SOAP-ENC namespace missing
 
 Version 2.0.5, 03.11.09 Sebastian Kurfürst <sebastian@typo3.org>
