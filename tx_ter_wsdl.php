@@ -52,9 +52,12 @@ if (!defined ('TYPO3_db')) 	die ('The configuration file was not included.');
 
 $serviceLocation = t3lib_div::getIndpEnv('TYPO3_SITE_URL').'index.php?id=ter';
 $WSDLSource = file_get_contents(t3lib_extMgm::extPath('ter').'tx_ter.wsdl');
-$WSDLSource = str_replace ('---SERVICE_LOCATION---', $serviceLocation, $WSDLSource);
+$WSDLSource = trim(str_replace ('---SERVICE_LOCATION---', $serviceLocation, $WSDLSource));
 
-header('Content-type: text/xml');
+if (!headers_sent()) {
+	header('Content-type: text/xml');
+	header('Content-Length: ' . strlen($WSDLSource));
+}
 echo ($WSDLSource);
 
 ?>
