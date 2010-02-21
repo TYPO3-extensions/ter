@@ -1,0 +1,32 @@
+Version 2.0.5, 03.11.09 Sebastian Kurfürst <sebastian@typo3.org>
+	* Added more verbose logging to tx_ter_api::increaseExtensionDownloadCounter
+
+Version 2.0.4, 24.11.08 Michael Stucki <michael@typo3.org>
+	# Bug fix: ter was not using PHPass (ext:t3sec_salted) for user authentication (patch by Marcus Krause <marcus#exp2008@t3sec.info>)
+
+Version 2.0.3, 27.09.07 Robert Lemke <robert@typo3.org>
+    + Added the feature that all FE users which are member of the TER Admin group may upload any extension, even if they don't own them.
+
+Version 2.0.2, 14.12.06 Robert Lemke <robert@typo3.org>
+	+ Finished implementation of "incrementExtensionDownloadCounter" which is used by the mirror's log analysis
+	+ Added François Suters extension download log analysis script (cli/process-extension-download-logs.php)
+
+01.09.06 Robert Lemke <robert@typo3.org>
+	+ Added new function "deleteExtension" which is only available for administrators
+
+21.03.06 Robert Lemke <robert@typo3.org>
+	+ Added new feature for checking extension keys with underscores provided by Elmar Hinz - thanks a lot!
+	+ Added unit tests for the new features, also provided by Elmar
+
+03.03.06 Robert Lemke <robert@typo3.org>
+
+	+ Added new fault code 207 to tx_ter_helper class
+	# Fixed a bug (and added unit test) which allowed anyone with a valid typo3.org account to upload any extension
+
+17.01.06 Robert Lemke <robert@typo3.org>
+
+	* Update reflecting the current state.
+
+11.07.05 Robert Lemke <robert@typo3.org>
+
+	* Started coding this extension

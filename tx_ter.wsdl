@@ -1,0 +1,505 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions name="tx_ter" targetNamespace="http://www.typo3.org/wsdl/tx_ter/" xmlns:tns="http://www.typo3.org/wsdl/tx_ter/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/">
+    <wsdl:types><xsd:schema targetNamespace="http://www.typo3.org/wsdl/tx_ter/" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+	<xsd:complexType name="accountData">
+		<xsd:sequence minOccurs="1" maxOccurs="1">
+			<xsd:element name="username" type="xsd:string">
+				<xsd:annotation>
+					<xsd:documentation>User name of an account being qualified to upload this extension</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="password" type="xsd:string">
+				<xsd:annotation>
+					<xsd:documentation>
+						Password of the user account
+					</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="extensionMetaData">
+		<xsd:sequence maxOccurs="1" minOccurs="1">
+			<xsd:element name="title" type="xsd:string" minOccurs="1"
+				maxOccurs="1">
+                        <xsd:annotation>
+                        	<xsd:documentation>Title of the extension</xsd:documentation>
+                        </xsd:annotation>
+			</xsd:element>
+			<xsd:element name="description" type="xsd:string" minOccurs="1" maxOccurs="1">
+				<xsd:annotation>
+					<xsd:documentation>Short text which describes the extension's functionality. Should not exceed 250 characters.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="state" type="tns:extensionStates" maxOccurs="1" minOccurs="1">
+                        <xsd:annotation>
+                        	<xsd:documentation>Development state of this version of the extension.</xsd:documentation>
+                        </xsd:annotation>
+			</xsd:element>
+			<xsd:element name="authorName" type="xsd:string" maxOccurs="1" minOccurs="0">
+				<xsd:annotation>
+					<xsd:documentation>First and last name of the extension's author.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="authorEmail" type="xsd:string" maxOccurs="1" minOccurs="0">
+				<xsd:annotation>
+					<xsd:documentation>Email address of the extension author</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="authorCompany" type="xsd:string" maxOccurs="1" minOccurs="0">
+				<xsd:annotation>
+					<xsd:documentation>Name of the company of the extension author</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="category" type="xsd:string" maxOccurs="1" minOccurs="0">
+				<xsd:annotation>
+					<xsd:documentation>Category code the extension falls into</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="fileData">
+		<xsd:sequence minOccurs="1" maxOccurs="1">
+			<xsd:element name="name" type="xsd:string" minOccurs="1"
+				maxOccurs="1">
+			</xsd:element>
+			<xsd:element name="size" type="xsd:int" minOccurs="1" maxOccurs="1"></xsd:element>
+			<xsd:element name="modificationTime" type="xsd:int"
+				minOccurs="0" maxOccurs="1">
+			</xsd:element>
+			<xsd:element name="content" type="xsd:base64Binary" minOccurs="1" maxOccurs="1"></xsd:element>
+			<xsd:element name="contentMD5" type="xsd:string"></xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
+            <xsd:complexType name="filesData">
+            	<xsd:complexContent>
+            		<xsd:restriction base="SOAP-ENC:Array">
+            			<xsd:sequence maxOccurs="1" minOccurs="1">
+            			<xsd:element name="fileData"
+            				type="tns:fileData" minOccurs="1" maxOccurs="unbounded">
+            			</xsd:element>
+            			</xsd:sequence>
+            		</xsd:restriction>
+            	</xsd:complexContent>
+            </xsd:complexType>
+            <xsd:complexType name="uploadExtensionResult">
+            	<xsd:sequence>
+            		<xsd:element name="resultCode" type="xsd:int">
+            			<xsd:annotation>
+            				<xsd:documentation>Result code returned after uploading an extension</xsd:documentation>
+            			</xsd:annotation>
+            		</xsd:element>
+            		<xsd:element name="resultMessages" type="xsd:string" minOccurs="0" maxOccurs="unbounded">
+            			<xsd:annotation>
+            				<xsd:documentation>Array of string messages</xsd:documentation>
+            			</xsd:annotation>
+            		</xsd:element>
+            		<xsd:element name="version" type="xsd:string">
+            			<xsd:annotation>
+            				<xsd:documentation>String value of the version number the extension was finally stored under. May be different from the version number specified in the uploadExtensionRequest if the version number was lower than the latest version already existing in the repository.</xsd:documentation>
+            			</xsd:annotation>
+            		</xsd:element>
+            	</xsd:sequence>
+            </xsd:complexType>
+            <xsd:complexType name="extensionData">
+            	<xsd:sequence>
+            		<xsd:element name="extensionKey" type="xsd:string"></xsd:element>
+            		<xsd:element name="version" type="xsd:string"></xsd:element>
+            		<xsd:element name="metaData"
+            			type="tns:extensionMetaData">
+            		</xsd:element>
+            		<xsd:element name="technicalData" type="tns:extensionTechnicalData">
+            		</xsd:element>
+            		<xsd:element name="infoData"
+            			type="tns:extensionInfoData" maxOccurs="1" minOccurs="0">
+            		</xsd:element>
+            	</xsd:sequence>
+            </xsd:complexType>
+            <xsd:complexType name="extensionInfoData">
+            	<xsd:sequence>
+            		<xsd:element name="dataSize" type="xsd:long" maxOccurs="1" minOccurs="0">
+            			<xsd:annotation>
+            				<xsd:documentation>Size in bytes of the files contained in this extension</xsd:documentation>
+            			</xsd:annotation>
+            		</xsd:element>
+            		<xsd:element name="dataSizeCompressed" type="xsd:long" maxOccurs="1" minOccurs="0">
+            			<xsd:annotation>
+            				<xsd:documentation>Compressed size in bytes of the files delivered with this extension</xsd:documentation>
+            			</xsd:annotation>
+            		</xsd:element>
+            		<xsd:element name="codeLines" type="xsd:int" maxOccurs="1" minOccurs="0">
+            			<xsd:annotation>
+            				<xsd:documentation>Number of PHP code lines of this extension</xsd:documentation>
+            			</xsd:annotation>
+            		</xsd:element>
+            		<xsd:element name="codeBytes" type="xsd:int" maxOccurs="1" minOccurs="0">
+            			<xsd:annotation>
+            				<xsd:documentation>Size in bytes of the PHP code of this extension</xsd:documentation>
+            			</xsd:annotation>
+            		</xsd:element>
+            		<xsd:element name="codingGuidelinesCompliance" type="xsd:string" maxOccurs="1" minOccurs="0"></xsd:element>
+            		<xsd:element name="codingGuidelinesComplianceNote"
+            			type="xsd:string" maxOccurs="1" minOccurs="0">
+            		</xsd:element>
+            		<xsd:element name="downloadCounter"
+            			type="xsd:integer" maxOccurs="1" minOccurs="0">
+                        <xsd:annotation>
+                        	<xsd:documentation>Number of downloads for this version of the extension</xsd:documentation>
+                        </xsd:annotation>
+            		</xsd:element>
+            		<xsd:element name="uploadComment" type="xsd:string" maxOccurs="1" minOccurs="0">
+            			<xsd:annotation>
+            				<xsd:documentation>Comment specified during the upload of this version of the extension</xsd:documentation>
+            			</xsd:annotation>
+            		</xsd:element>
+            		<xsd:element name="techInfo" type="xsd:string" maxOccurs="unbounded" minOccurs="0">
+            			<xsd:annotation>
+            				<xsd:documentation>Array of string containing technical messages about this extension generated by the Extension Manager</xsd:documentation>
+            			</xsd:annotation>
+            		</xsd:element>
+            	</xsd:sequence>
+            </xsd:complexType>
+
+            <xsd:complexType name="extensionTechnicalData">
+            	<xsd:sequence>
+            		<xsd:element name="dependencies"
+            			type="tns:extensionDependency" maxOccurs="unbounded" minOccurs="1">
+                        <xsd:annotation>
+                        	<xsd:documentation>Dependencies, conflicts, suggestions etc. of the extension. This also includes dependencies on certain PHP or TYPO3 versions.</xsd:documentation>
+                        </xsd:annotation>
+            		</xsd:element>
+            		<xsd:element name="loadOrder" type="xsd:string"
+            			maxOccurs="1" minOccurs="0">
+            		</xsd:element>
+            		<xsd:element name="uploadFolder" type="xsd:boolean"
+            			maxOccurs="1" minOccurs="0">
+            		</xsd:element>
+            		<xsd:element name="createDirs" type="xsd:string" maxOccurs="1" minOccurs="0"></xsd:element>
+            		<xsd:element name="shy" type="xsd:boolean" maxOccurs="1" minOccurs="0">
+            			<xsd:annotation>
+            				<xsd:documentation>TRUE if the extension is a &quot;shy&quot; extension</xsd:documentation>
+            			</xsd:annotation>
+            		</xsd:element>
+            		<xsd:element name="modules" type="xsd:string" maxOccurs="1" minOccurs="0">
+            			<xsd:annotation>
+            				<xsd:documentation>Comma separated list of module names of the modules the extension provides. Eg. &quot;mod1,mod2&quot;</xsd:documentation>
+            			</xsd:annotation>
+            		</xsd:element>
+            		<xsd:element name="modifyTables" type="xsd:string" maxOccurs="1" minOccurs="0">
+                        <xsd:annotation>
+                        	<xsd:documentation>Comma separated list of foreign database table names this extension alters.</xsd:documentation>
+                        </xsd:annotation>
+            		</xsd:element>
+            		<xsd:element name="priority" type="tns:extensionPriorities" maxOccurs="1" minOccurs="0">
+            			</xsd:element>
+            		<xsd:element name="clearCacheOnLoad"
+            			type="xsd:boolean" maxOccurs="1" minOccurs="1">
+                        <xsd:annotation>
+                        	<xsd:documentation>TRUE if the caches should be cleared on installation or upgrade of this extension</xsd:documentation>
+                        </xsd:annotation>
+            		</xsd:element>
+            		<xsd:element name="lockType"
+            			type="tns:extensionLockTypes" maxOccurs="1"
+            			minOccurs="0">
+                        <xsd:annotation>
+                        	<xsd:documentation>Defines if this extension can only run in a certain scope, for example installed as a system extension.</xsd:documentation>
+                        </xsd:annotation>
+            		</xsd:element>
+            	</xsd:sequence>
+            </xsd:complexType>
+
+            <xsd:simpleType name="extensionStates">
+            	<xsd:restriction base="xsd:string">
+            		<xsd:enumeration value="experimental"></xsd:enumeration>
+            		<xsd:enumeration value="alpha"></xsd:enumeration>
+            		<xsd:enumeration value="beta"></xsd:enumeration>
+            		<xsd:enumeration value="stable"></xsd:enumeration>
+            		<xsd:enumeration value="obsolete"></xsd:enumeration>
+            	</xsd:restriction>
+            </xsd:simpleType>
+
+            <xsd:complexType name="extensionDependency">
+            	<xsd:sequence maxOccurs="1" minOccurs="1">
+            		<xsd:element name="kind"
+            			type="tns:dependencyKinds" maxOccurs="1" minOccurs="1">
+            		</xsd:element>
+            		<xsd:element name="extensionKey"
+            			type="xsd:string" maxOccurs="1" minOccurs="1">
+            			<xsd:annotation>
+            				<xsd:documentation>
+            					Extension key the extension depends on /
+            					recommends / suggests / conflicts with
+            					or replaces.
+
+            					If the extension depends on a certain
+            					version (-range) of the TYPO3 core, the
+            					special keyword &quot;typo3&quot; must
+            					be set as the extension key. In case the
+            					extension relies on a certain version
+            					(-range) of PHP, the special keyword
+            					&quot;php&quot; must be set
+            					respectively.
+            				</xsd:documentation>
+            			</xsd:annotation>
+            		</xsd:element>
+            		<xsd:element name="versionRange"
+            			type="xsd:string" maxOccurs="1" minOccurs="0">
+            		</xsd:element>
+            	</xsd:sequence>
+            </xsd:complexType>
+
+            <xsd:complexType name="extensionConflicts">
+            	<xsd:sequence maxOccurs="unbounded" minOccurs="0">
+            		<xsd:element name="conflict"
+            			type="tns:extensionDependency">
+            		</xsd:element>
+            	</xsd:sequence>
+            </xsd:complexType>
+
+            <xsd:simpleType name="dependencyKinds">
+            	<xsd:restriction base="xsd:string">
+            		<xsd:enumeration value="depends"></xsd:enumeration>
+            		<xsd:enumeration value="recommends"></xsd:enumeration>
+            		<xsd:enumeration value="suggests"></xsd:enumeration>
+            		<xsd:enumeration value="conflicts"></xsd:enumeration>
+            		<xsd:enumeration value="replaces"></xsd:enumeration>
+            	</xsd:restriction>
+            </xsd:simpleType>
+
+            <xsd:simpleType name="extensionPriorities">
+            	<xsd:restriction base="xsd:string">
+            		<xsd:enumeration value=""></xsd:enumeration>
+            		<xsd:enumeration value="top"></xsd:enumeration>
+            	</xsd:restriction>
+            </xsd:simpleType>
+
+            <xsd:simpleType name="extensionLockTypes">
+            	<xsd:restriction base="xsd:string">
+            		<xsd:enumeration value="G"></xsd:enumeration>
+            		<xsd:enumeration value="L"></xsd:enumeration>
+            		<xsd:enumeration value="S"></xsd:enumeration>
+            	</xsd:restriction>
+            </xsd:simpleType>
+
+            <xsd:complexType name="simpleResult">
+            	<xsd:sequence>
+            		<xsd:element name="resultCode" type="xsd:integer"></xsd:element>
+            		<xsd:element name="resultMessages" type="xsd:string" maxOccurs="unbounded" minOccurs="0"></xsd:element>
+            	</xsd:sequence>
+            </xsd:complexType>
+            <xsd:complexType name="registerExtensionKeyData">
+            	<xsd:sequence>
+            		<xsd:element name="extensionKey" type="xsd:string"></xsd:element>
+            		<xsd:element name="title" type="xsd:string"></xsd:element>
+            		<xsd:element name="description" type="xsd:string"
+            			maxOccurs="1" minOccurs="0">
+            		</xsd:element>
+            	</xsd:sequence>
+            </xsd:complexType>
+            <xsd:complexType name="extensionKeyFilterOptions">
+            	<xsd:sequence maxOccurs="1" minOccurs="0">
+            		<xsd:element name="username" type="xsd:string"
+            			default="true" maxOccurs="1" minOccurs="0">
+            		</xsd:element>
+            		<xsd:element name="extensionKey" type="xsd:string" maxOccurs="1" minOccurs="0"></xsd:element>
+            		<xsd:element name="title" type="xsd:string" maxOccurs="1" minOccurs="0"></xsd:element>
+            		<xsd:element name="description" type="xsd:string" maxOccurs="1" minOccurs="0"></xsd:element>
+            	</xsd:sequence>
+            </xsd:complexType>
+            <xsd:complexType name="getExtensionKeysResponse">
+            	<xsd:sequence maxOccurs="1" minOccurs="1">
+            		<xsd:element name="extensionKeyData" maxOccurs="unbounded" minOccurs="1" type="tns:extensionKeyData">
+            		</xsd:element>
+            		<xsd:element name="simpleResult"
+            			type="tns:simpleResult">
+            		</xsd:element>
+            	</xsd:sequence>
+            </xsd:complexType>
+            <xsd:complexType name="extensionKeyData">
+            	<xsd:sequence>
+            		<xsd:element name="extensionKey"
+            			type="xsd:string">
+            		</xsd:element>
+            		<xsd:element name="title" type="xsd:string"></xsd:element>
+            		<xsd:element name="description" type="xsd:string"></xsd:element>
+            		<xsd:element name="ownerUsername"
+            			type="xsd:string">
+            		</xsd:element>
+            	</xsd:sequence>
+            </xsd:complexType>
+            <xsd:complexType name="modifyExtensionKeyData">
+            	<xsd:sequence>
+            		<xsd:element name="extensionKey" type="xsd:string"
+            			maxOccurs="1" minOccurs="1">
+            		</xsd:element>
+            		<xsd:element name="ownerUsername" type="xsd:string"
+            			maxOccurs="1" minOccurs="0">
+            		</xsd:element>
+            	</xsd:sequence>
+            </xsd:complexType>
+            <xsd:complexType name="setReviewStateData">
+            	<xsd:sequence>
+            		<xsd:element name="extensionKey"
+            			type="xsd:string">
+            		</xsd:element>
+            		<xsd:element name="version" type="xsd:string"></xsd:element>
+            		<xsd:element name="reviewState"
+            			type="xsd:integer">
+            		</xsd:element>
+            	</xsd:sequence>
+            </xsd:complexType>
+            <xsd:complexType name="extensionVersionAndIncrementor">
+            	<xsd:sequence minOccurs="1" maxOccurs="1">
+            		<xsd:element name="extensionKey"
+            			type="xsd:string">
+            		</xsd:element>
+            		<xsd:element name="version" type="xsd:string"></xsd:element>
+            		<xsd:element name="downloadCountIncrementor" type="xsd:int"></xsd:element>
+            	</xsd:sequence>
+            </xsd:complexType>
+            <xsd:complexType name="extensionVersionsAndIncrementors">
+            	<xsd:complexContent>
+            		<xsd:restriction base="SOAP-ENC:Array">
+            			<xsd:sequence maxOccurs="1" minOccurs="1">
+		            		<xsd:element name="extensionVersionAndIncrementor" type="tns:extensionVersionAndIncrementor" minOccurs="1" maxOccurs="unbounded"></xsd:element>
+            			</xsd:sequence>
+            		</xsd:restriction>
+            	</xsd:complexContent>
+            </xsd:complexType>
+
+            <xsd:element name="NewElement" type="xsd:string"></xsd:element>
+        </xsd:schema></wsdl:types>
+    <wsdl:message name="pingResponse">
+    <wsdl:part name="returnValue" type="xsd:string"/>
+  </wsdl:message>
+  <wsdl:message name="pingRequest">
+    <wsdl:part name="value" type="xsd:string"/>
+  </wsdl:message>
+  <wsdl:message name="uploadExtensionResponse">
+  	<wsdl:part name="uploadExtensionResult" type="tns:uploadExtensionResult"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="uploadExtensionRequest">
+  <wsdl:part name="accountData" type="tns:accountData"></wsdl:part>
+        <wsdl:part name="extensionData" type="tns:extensionData"></wsdl:part>
+        <wsdl:part name="filesData" type="tns:filesData"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="checkExtensionKeyResponse">
+  	<wsdl:part name="simpleResult" type="tns:simpleResult"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="checkExtensionKeyRequest">
+  	<wsdl:part name="accountData" type="tns:accountData"></wsdl:part>
+  	<wsdl:part name="extensionKey" type="xsd:string"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="registerExtensionKeyResponse">
+  	<wsdl:part name="simpleResult"
+  		type="tns:simpleResult">
+  	</wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="registerExtensionKeyRequest">
+        <wsdl:part name="accountData" type="tns:accountData"></wsdl:part>
+        <wsdl:part name="registerExtensionKeyData" type="tns:registerExtensionKeyData"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="getExtensionKeysResponse">
+  	<wsdl:part name="getExtensionKeysResponse" type="tns:extensionKeysData"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="getExtensionKeysRequest">
+  	<wsdl:part name="accountData" type="tns:accountData"></wsdl:part>
+  	<wsdl:part name="extensionKeyFilterOptions" type="tns:extensionKeyFilterOptions"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="modifyExtensionKeyResponse">
+  	<wsdl:part name="simpleResult" type="tns:simpleResult"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="modifyExtensionKeyRequest">
+  	<wsdl:part name="accountData" type="tns:accountData"></wsdl:part>
+  	<wsdl:part name="modifyExtensionKeyData" type="tns:modifyExtensionKeyData"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="deleteExtensionKeyResponse">
+  	<wsdl:part name="simpleResult" type="tns:simpleResult"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="deleteExtensionKeyRequest">
+  	<wsdl:part name="accountData" type="tns:accountData"></wsdl:part>
+  	<wsdl:part name="extensionKey" type="xsd:string"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="setReviewStateResponse">
+  	<wsdl:part name="simpleResult" type="tns:simpleResult"></wsdl:part>
+    </wsdl:message>
+  <wsdl:message name="setReviewStateRequest">
+  <wsdl:part name="accountData" type="tns:accountData"></wsdl:part>
+  <wsdl:part name="setReviewStateData" type="tns:setReviewStateData"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="increaseExtensionDownloadCountersResponse">
+  	<wsdl:part name="increaseExtensionDownloadCountersResponse"
+  		type="tns:simpleResult">
+  	</wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="increaseExtensionDownloadCountersRequest">
+  <wsdl:part name="accountData" type="tns:accountData"></wsdl:part>
+  <wsdl:part name="extensionVersionsAndIncrementors"
+  	type="tns:extensionVersionsAndIncrementors">
+  </wsdl:part>
+  </wsdl:message>
+    <wsdl:message name="deleteExtensionRequest"><wsdl:part name="accountData" type="tns:accountData"></wsdl:part><wsdl:part name="extensionKey" type="xsd:string"></wsdl:part><wsdl:part name="version" type="xsd:string"></wsdl:part></wsdl:message>
+    <wsdl:message name="deleteExtensionResponse"><wsdl:part name="simpleResult" type="tns:simpleResult"></wsdl:part></wsdl:message>
+    <wsdl:portType name="tx_ter">
+    <wsdl:operation name="ping">
+      <wsdl:documentation>Method for basic connectivity check. Returns the given value prepended by &quot;pong&quot;.</wsdl:documentation>
+      <wsdl:input message="tns:pingRequest"/>
+      <wsdl:output message="tns:pingResponse"/>
+    </wsdl:operation>
+    <wsdl:operation name="uploadExtension">
+    	<wsdl:documentation>Uploads an extension to the extension repository.</wsdl:documentation>
+    	<wsdl:input message="tns:uploadExtensionRequest"></wsdl:input>
+    	<wsdl:output message="tns:uploadExtensionResponse"></wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="checkExtensionKey">
+    	<wsdl:input message="tns:checkExtensionKeyRequest"></wsdl:input>
+    	<wsdl:output message="tns:checkExtensionKeyResponse"></wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="registerExtensionKey">
+    	<wsdl:input message="tns:registerExtensionKeyRequest"></wsdl:input>
+    	<wsdl:output message="tns:registerExtensionKeyResponse"></wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="getExtensionKeys">
+    	<wsdl:input message="tns:getExtensionKeysRequest"></wsdl:input>
+    	<wsdl:output message="tns:getExtensionKeysResponse"></wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="modifyExtensionKey">
+    	<wsdl:input message="tns:modifyExtensionKeyRequest"></wsdl:input>
+    	<wsdl:output message="tns:modifyExtensionKeyResponse"></wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="deleteExtensionKey">
+    	<wsdl:input message="tns:deleteExtensionKeyRequest"></wsdl:input>
+    	<wsdl:output message="tns:deleteExtensionKeyResponse"></wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="setReviewState">
+    	<wsdl:input message="tns:setReviewStateRequest"></wsdl:input>
+    	<wsdl:output message="tns:setReviewStateResponse"></wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="increaseExtensionDownloadCounters">
+    	<wsdl:input
+    		message="tns:increaseExtensionDownloadCountersRequest">
+    	</wsdl:input>
+    	<wsdl:output
+    		message="tns:increaseExtensionDownloadCountersResponse">
+    	</wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="deleteExtension"><wsdl:input message="tns:deleteExtensionRequest"></wsdl:input><wsdl:output message="tns:deleteExtensionResponse"></wsdl:output></wsdl:operation>
+    </wsdl:portType>
+  <wsdl:binding name="tx_terSOAP" type="tns:tx_ter">
+        <soap:binding style="rpc" transport="http://schemas.xmlsoap.org/soap/http"/>
+        <wsdl:operation name="ping"><soap:operation soapAction="http://www.typo3.org/wsdl/tx_ter/ping"/><wsdl:input><soap:body use="literal" namespace="http://www.typo3.org/wsdl/tx_ter/"/></wsdl:input><wsdl:output><soap:body use="literal" namespace="http://www.typo3.org/wsdl/tx_ter/"/></wsdl:output></wsdl:operation>
+        <wsdl:operation name="uploadExtension"><soap:operation soapAction="http://www.typo3.org/wsdl/tx_ter/uploadExtension"/><wsdl:input><soap:body use="literal" namespace="http://www.typo3.org/wsdl/tx_ter/"/></wsdl:input><wsdl:output><soap:body use="literal" namespace="http://www.typo3.org/wsdl/tx_ter/"/></wsdl:output></wsdl:operation>
+        <wsdl:operation name="checkExtensionKey"><soap:operation soapAction="http://www.typo3.org/wsdl/tx_ter/checkExtensionKey"/><wsdl:input><soap:body use="literal" namespace="http://www.typo3.org/wsdl/tx_ter/"/></wsdl:input><wsdl:output><soap:body use="literal" namespace="http://www.typo3.org/wsdl/tx_ter/"/></wsdl:output></wsdl:operation>
+        <wsdl:operation name="registerExtensionKey"><soap:operation soapAction="http://www.typo3.org/wsdl/tx_ter/registerExtensionKey"/><wsdl:input><soap:body use="literal" namespace="http://www.typo3.org/wsdl/tx_ter/"/></wsdl:input><wsdl:output><soap:body use="literal" namespace="http://www.typo3.org/wsdl/tx_ter/"/></wsdl:output></wsdl:operation>
+        <wsdl:operation name="getExtensionKeys"><soap:operation soapAction="http://www.typo3.org/wsdl/tx_ter/getExtensionKeys"/><wsdl:input><soap:body use="literal" namespace="http://www.typo3.org/wsdl/tx_ter/"/></wsdl:input><wsdl:output><soap:body use="literal" namespace="http://www.typo3.org/wsdl/tx_ter/"/></wsdl:output></wsdl:operation>
+        <wsdl:operation name="modifyExtensionKey"><soap:operation soapAction="http://www.typo3.org/wsdl/tx_ter/modifyExtensionKey"/><wsdl:input><soap:body use="literal" namespace="http://www.typo3.org/wsdl/tx_ter/"/></wsdl:input><wsdl:output><soap:body use="literal" namespace="http://www.typo3.org/wsdl/tx_ter/"/></wsdl:output></wsdl:operation>
+        <wsdl:operation name="deleteExtensionKey"><soap:operation soapAction="http://www.typo3.org/wsdl/tx_ter/deleteExtensionKey"/><wsdl:input><soap:body use="literal" namespace="http://www.typo3.org/wsdl/tx_ter/"/></wsdl:input><wsdl:output><soap:body use="literal" namespace="http://www.typo3.org/wsdl/tx_ter/"/></wsdl:output></wsdl:operation>
+        <wsdl:operation name="setReviewState"><soap:operation soapAction="http://www.typo3.org/wsdl/tx_ter/setReviewState"/><wsdl:input><soap:body use="literal" namespace="http://www.typo3.org/wsdl/tx_ter/"/></wsdl:input><wsdl:output><soap:body use="literal" namespace="http://www.typo3.org/wsdl/tx_ter/"/></wsdl:output></wsdl:operation>
+        <wsdl:operation name="increaseExtensionDownloadCounters"><soap:operation soapAction="http://www.typo3.org/wsdl/tx_ter/increaseExtensionDownloadCounter"/><wsdl:input><soap:body use="literal" namespace="http://www.typo3.org/wsdl/tx_ter/"/></wsdl:input><wsdl:output><soap:body use="literal" namespace="http://www.typo3.org/wsdl/tx_ter/"/></wsdl:output></wsdl:operation>
+        <wsdl:operation name="deleteExtension"><soap:operation soapAction="http://www.typo3.org/wsdl/tx_ter/deleteExtension"/><wsdl:input><soap:body use="literal" namespace="http://www.typo3.org/wsdl/tx_ter/"/></wsdl:input><wsdl:output><soap:body use="literal" namespace="http://www.typo3.org/wsdl/tx_ter/"/></wsdl:output></wsdl:operation>
+    </wsdl:binding>
+  <wsdl:service name="tx_ter">
+    <wsdl:port name="tx_terSOAP" binding="tns:tx_terSOAP">
+      <soap:address location="---SERVICE_LOCATION---"/>
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>

@@ -1,0 +1,8 @@
+plugin.tx_ter_pi1 {
+
+	pid =
+	reviewersFrontendUsergroupUid =
+	adminFrontendUsergroupUid = 
+	mirrorsFrontendUsergroupUid =
+	
+}
