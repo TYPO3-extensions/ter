@@ -31,11 +31,11 @@
  * The results are then sent to the TER via a SOAP call.
  *
  * Example for testing this script:
- * 
+ *
  * /usr/bin/php5 {fullpath...}/process-extension-download-logs_cli.php -u terdevtestmirror -p terdevemptypassword -l /var/log/access_log -w http://ter.dev.robertlemke.de/wsdl/tx_ter_wsdl.php
- * 
+ *
  * Don't forget to add the parameter --dry-run if you're just testing!
- *  
+ *
  * $Id$
  *
  * @author	Francois Suter <fsuter@cobweb.ch>
@@ -48,9 +48,9 @@ define('TER_CLI_PATH', dirname(__FILE__) . DIRECTORY_SEPARATOR);
 require_once (TER_CLI_PATH . '../resources/ezcomponents/Base/src/base.php');
 
 /**
- * Autoload ezc classes 
- * 
- * @param string $className 
+ * Autoload ezc classes
+ *
+ * @param string $className
  */
 function __autoload( $className ) {
     ezcBase::autoload( $className );
@@ -247,10 +247,10 @@ while (!feof($fp)) {
 }
 
 	// Format download counter array for SOAP call to TER
-$extensionVersionsAndIncrementors = array('extensionVersionAndIncrementor' => array());
+$extensionVersionsAndIncrementors = array();
 foreach ($downloadCounter as $extensionKey => $versionCounters) {
 	foreach ($versionCounters as $extensionVersion => $count) {
-		$extensionVersionsAndIncrementors['extensionVersionAndIncrementor'][] = array(
+		$extensionVersionsAndIncrementors[] = array(
 			'extensionKey' => $extensionKey,
 			'version' => $extensionVersion,
 			'downloadCountIncrementor' => $count
