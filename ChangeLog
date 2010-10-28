@@ -1,3 +1,6 @@
+28.10.2010 Marcus Krause <marcus#exp2010@t3sec.info>
+	* code cleanup, replaced ereg* functions with preg* ones
+
 Version 2.0.8, 19.08.10 Steffen Kamper <steffen@typo3.org>
 	# Fixed bug #6891: TER donwload counter broken
 

@@ -816,27 +816,28 @@ class tx_ter_api {
 	protected function checkExtensionKey_extensionKeyIsFormallyValid ($extensionKey) {
 		$ok = TRUE;
 
-			// Check characters used:
-		if (ereg('[^a-z0-9_]',$extensionKey))	{
+			// check for forbidden characters
+		if (preg_match('/[^a-z0-9_]/', $extensionKey))	{
 			$ok = FALSE;
 		}
 
-			// Check characters used:
-		if (ereg('^[0-9_]',$extensionKey) || ereg("[_]$", $extensionKey))	{
+			// check for forbidden start and end characters
+		if (preg_match('/^[0-9_]/', $extensionKey) || preg_match("/[_]$/", $extensionKey))	{
 			$ok = FALSE;
 		}
 
 			// Length
-		$extensionKeyModule = str_replace('_','',$extensionKey);
-		if (strlen($extensionKey)>30 || strlen($extensionKey)<3 || strlen($extensionKeyModule)<3)	{
+		$extensionKeyLength = strlen(str_replace('_', '', $extensionKey));
+		if ($extensionKeyLength < 3 || $extensionKeyLength > 30) {
 			$ok = FALSE;
 		}
 
 			// Bad prefixes:
-		$badPrefixesArr = array ('tx','u','user_','pages','tt_','sys_','ts_language_','csh_');
+		$badPrefixesArr = array ('tx', 'u', 'user_', 'pages', 'tt_', 'sys_', 'ts_language_', 'csh_');
 		foreach ($badPrefixesArr as $prefix) {
 			if (t3lib_div::isFirstPartOfStr($extensionKey, $prefix))	{
 				$ok = FALSE;
+				break;
 			}
 		}
 

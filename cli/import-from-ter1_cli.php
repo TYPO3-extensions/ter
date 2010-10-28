@@ -456,7 +456,7 @@ function writeExtensionInfoToDB ($accountData, $extensionData, $filesData, $exte
 			}
 		} else {	// From string to double
 			$result = t3lib_div::int_from_ver($input);
-			if (ereg('(dev|a|b|rc)([0-9]*)$',strtolower($input),$reg))	{
+			if (preg_match('/(dev|a|b|rc)([0-9]*)$/', strtolower($input), $reg))	{
 				$dec = intval($subDecIndex[$reg[1]]).$reg[2];
 				$result = (double)(($result-1).'.'.$dec);
 			}
