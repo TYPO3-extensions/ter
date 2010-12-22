@@ -159,10 +159,41 @@ class tx_ter_helper {
 		}
 
 		$row['admin'] = (intval($this->pluginObj->conf['adminFrontendUsergroupUid']) && t3lib_div::inList($row['usergroup'], $this->pluginObj->conf['adminFrontendUsergroupUid']));
-				
+
 		return $row;
 	}
 
+	/**
+	 * Checks for correct account data without throwing SoapFault.
+	 * It just returns TRUE / FALSE
+	 *
+	 * @param  object $accountData
+	 * @return boolean
+	 */
+	public function checkValidUser($accountData) {
+		if (!strlen($accountData->username) || (!strlen($accountData->password))) {
+			$success = FALSE;
+		}  else {
+			$success = FALSE;
+			$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
+				'*',
+				'fe_users',
+				'username="' . $GLOBALS['TYPO3_DB']->quoteStr($accountData->username, 'fe_users') . '"' . $GLOBALS['TSFE']->sys_page->enableFields('fe_users')
+			);
+
+			if ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res)) {
+				$objPHPass   = t3lib_div::makeInstance('tx_t3secsaltedpw_phpass');
+				// we do not consider 'C' or 'M' prefixed salted password hashes
+				// as password strings on typo3.org are not updated ones
+				if ($row['password'] === $accountData->password || $objPHPass->checkPassword($accountData->password, $row['password'])) {
+					$success = TRUE;
+				}
+			}
+			$GLOBALS['TYPO3_DB']->sql_free_result($res);
+		}
+
+		return $success;
+	}
 
     /**
  * Checks if the given extension key is unique and not registered yet.

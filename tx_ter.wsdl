@@ -375,6 +375,12 @@
   <wsdl:message name="pingRequest">
     <wsdl:part name="value" type="xsd:string"/>
   </wsdl:message>
+  <wsdl:message name="loginResponse">
+    <wsdl:part name="returnValue" type="xsd:boolean"/>
+  </wsdl:message>
+  <wsdl:message name="logingRequest">
+    <wsdl:part name="accountData" type="tns:accountData"></wsdl:part>
+  </wsdl:message>
   <wsdl:message name="uploadExtensionResponse">
   	<wsdl:part name="uploadExtensionResult" type="tns:uploadExtensionResult"></wsdl:part>
   </wsdl:message>
@@ -445,6 +451,11 @@
       <wsdl:documentation>Method for basic connectivity check. Returns the given value prepended by &quot;pong&quot;.</wsdl:documentation>
       <wsdl:input message="tns:pingRequest"/>
       <wsdl:output message="tns:pingResponse"/>
+    </wsdl:operation>
+    <wsdl:operation name="login">
+      <wsdl:documentation>Method for basic autorisation check. Returns TRUE on success and FALSE on failure.</wsdl:documentation>
+      <wsdl:input message="tns:loginRequest"/>
+      <wsdl:output message="tns:loginResponse"/>
     </wsdl:operation>
     <wsdl:operation name="uploadExtension">
     	<wsdl:documentation>Uploads an extension to the extension repository.</wsdl:documentation>

@@ -124,6 +124,19 @@ class tx_ter_api {
 	}
 
 	/**
+	 * Checks for valid account data
+	 *
+	 * @param	object		$accountData: Username and passwords for auth check
+	 * @return bool
+	 * @access	public
+	 * @since	2.0.0
+	 */
+	public function login($accountData) {
+		return $this->helperObj->checkValidUser($accountData);
+	}
+
+
+	/**
 	 * Method for uploading an extension to the repository
 	 *
 	 * @param	object		$accountData: Username and passwords for upload the extension
@@ -155,7 +168,7 @@ class tx_ter_api {
 			'version' => $extensionInfoData->version,
 		);
 	}
-	
+
 	/**
 	 * Method for deleting an extension version from the repository
 	 *
@@ -184,7 +197,7 @@ class tx_ter_api {
 			'resultMessages' => array()
 		);
 	}
-	
+
 	/**
 	 * Checks if an extension key already exists
 	 *
@@ -261,7 +274,7 @@ class tx_ter_api {
 		if (isset ($extensionKeyFilterOptions->title)) $whereClause .= ' AND title LIKE "'.$TYPO3_DB->quoteStr ($extensionKeyFilterOptions->title, 'tx_ter_extensionkeys').'"';
 		if (isset ($extensionKeyFilterOptions->description)) $whereClause .= ' AND description LIKE "'.$TYPO3_DB->quoteStr ($extensionKeyFilterOptions->description, 'tx_ter_extensionkeys').'"';
 		if (isset ($extensionKeyFilterOptions->extensionKey)) $whereClause .= ' AND extensionkey LIKE "'.$TYPO3_DB->quoteStr ($extensionKeyFilterOptions->extensionKey, 'tx_ter_extensionkeys').'"';
-		
+
 		$res = $TYPO3_DB->exec_SELECTquery (
 			'extensionkey,title,description,ownerusername',
 			'tx_ter_extensionkeys',
@@ -406,7 +419,7 @@ class tx_ter_api {
 	public function increaseExtensionDownloadCounters ($accountData, $extensionVersionsAndIncrementors) {
 		global $TSFE, $TYPO3_DB;
 		$errorMessages = array();
-		
+
 		t3lib_div::devLog('DownloadCounter: Trying to increase extension download counters - user "' . $accountData->username . '" connected from IP "' . t3lib_div::getIndpEnv('REMOTE_ADDR') . '" - number of results: ' . count($extensionVersionsAndIncrementors->extensionVersionAndIncrementor), 'tx_ter_api', 0);
 
 		$userRecordArr = $this->helperObj->getValidUser($accountData);
@@ -440,7 +453,7 @@ class tx_ter_api {
 				$errorMessages[] = '['.$extensionVersionAndIncrementor->extensionKey.']['.$extensionVersionAndIncrementor->version.'] '.$exception->faultstring;
 			}
 		}
-	
+
 		t3lib_div::devLog('DownloadCounter: Increased download counter for ' . $counter . ' extensions. User "' . $accountData->username . '".', 'tx_ter_api', 0);
 			// Update extension index file
 		$this->helperObj->requestUpdateOfExtensionIndexFile();
@@ -739,9 +752,9 @@ class tx_ter_api {
 	}
 
 
-	
-	
-	
+
+
+
 	/*********************************************************
 	 *
 	 * deleteExtension helper functions
@@ -751,7 +764,7 @@ class tx_ter_api {
 	/**
 	 * Deletes an extension version from the database and its files from the repository directory.
 	 * After the deletion, the extension index is updated.
-	 * 
+	 *
 	 * @param	string		$extensionKey: The extension key
 	 * @param	string		$version: Version number of the extension to delete
 	 * @return	void
@@ -761,7 +774,7 @@ class tx_ter_api {
 		global $TYPO3_DB;
 
 		if (!@is_dir ($this->parentObj->repositoryDir)) throw new SoapFault (TX_TER_ERROR_GENERAL_EXTREPDIRDOESNTEXIST, 'Extension repository directory does not exist.');
-		
+
 		$result = $TYPO3_DB->exec_SELECTquery (
 			'uid',
 			'tx_ter_extensions',
@@ -774,7 +787,7 @@ class tx_ter_api {
 		if (!intval($extensionRow['uid'])) {
 			throw new SoapFault (TX_TER_ERROR_DELETEEXTENSION_EXTENSIONDOESNTEXIST, 'deleteExtension_deleteFromDBAndRemoveFiles: Extension does not exist. (extensionkey: '.$extensionKey.' version: '.$version.')');
 		}
-		
+
 		$result = $TYPO3_DB->exec_DELETEquery (
 			'tx_ter_extensiondetails',
 			'extensionuid = '.intval($extensionRow['uid'])
@@ -795,11 +808,11 @@ class tx_ter_api {
 		@unlink ($fullPath.$t3xFileName);
 		@unlink ($fullPath.$gifFileName);
 	}
-	
-	
-	
-	
-	
+
+
+
+
+
 	/*********************************************************
 	 *
 	 * checkExtensionKey helper functions
