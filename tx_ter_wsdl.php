@@ -40,7 +40,8 @@ define('PATH_thisScript',str_replace('//','/', str_replace('\\','/', (php_sapi_n
 
 define('PATH_site', str_replace ('/wsdl', '', dirname(PATH_thisScript)).'/');
 define('PATH_t3lib', PATH_site.'t3lib/');
-define('PATH_tslib', PATH_site.'tslib/');
+define('PATH_typo3', PATH_site.'typo3/');
+define('PATH_tslib', PATH_typo3.'sysext/cms/tslib/');
 define('PATH_typo3conf', PATH_site.'typo3conf/');
 define('TYPO3_mainDir', 'typo3/');
 

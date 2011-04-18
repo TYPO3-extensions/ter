@@ -23,4 +23,6 @@ $TCA['tt_content']['types']['list']['subtypes_addlist'][$_EXTKEY.'_pi1']='pi_fle
 t3lib_extMgm::addPlugin(Array('TER SOAP Server', $_EXTKEY.'_pi1'));
 t3lib_extMgm::allowTableOnStandardPages('tx_ter_extensionkeys');
 
+t3lib_extMgm::addStaticFile($_EXTKEY, 'resources/static/', 'TYPO3 Extension Repository');
+
 ?>

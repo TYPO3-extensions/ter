@@ -51,7 +51,7 @@
 	// Make sure that we are executed only in TYPO3 context
 if (!defined ('TYPO3_MODE')) die ('Access denied.');
 
-require_once t3lib_extMgm::extPath('t3sec_saltedpw').'res/lib/class.tx_t3secsaltedpw_phpass.php';
+require_once t3lib_extMgm::extPath('saltedpasswords').'classes/salts/class.tx_saltedpasswords_salts_phpass.php';
 
 	// Error codes:
 define (TX_TER_ERROR_GENERAL_EXTREPDIRDOESNTEXIST, '100');
@@ -148,7 +148,7 @@ class tx_ter_helper {
 		);
 
 		if ($row = $TYPO3_DB->sql_fetch_assoc($res)) {
-			$objPHPass   = t3lib_div::makeInstance('tx_t3secsaltedpw_phpass');
+			$objPHPass = t3lib_div::makeInstance('tx_saltedpasswords_salts_phpass');
 				// we do not consider 'C' or 'M' prefixed salted password hashes
 				// as password strings on typo3.org are not updated ones
 			if ($row['password'] !== $accountData->password && !$objPHPass->checkPassword($accountData->password, $row['password'])) {
@@ -159,7 +159,7 @@ class tx_ter_helper {
 		}
 
 		$row['admin'] = (intval($this->pluginObj->conf['adminFrontendUsergroupUid']) && t3lib_div::inList($row['usergroup'], $this->pluginObj->conf['adminFrontendUsergroupUid']));
-
+				
 		return $row;
 	}
 
@@ -182,7 +182,7 @@ class tx_ter_helper {
 			);
 
 			if ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res)) {
-				$objPHPass   = t3lib_div::makeInstance('tx_t3secsaltedpw_phpass');
+				$objPHPass = t3lib_div::makeInstance('tx_saltedpasswords_salts_phpass');
 				// we do not consider 'C' or 'M' prefixed salted password hashes
 				// as password strings on typo3.org are not updated ones
 				if ($row['password'] === $accountData->password || $objPHPass->checkPassword($accountData->password, $row['password'])) {
