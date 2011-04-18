@@ -38,7 +38,7 @@ define('TYPO3_OS', stristr(PHP_OS,'win')&&!stristr(PHP_OS,'darwin')?'WIN':'');
 define('TYPO3_MODE','FE');
 define('PATH_thisScript',str_replace('//','/', str_replace('\\','/', (php_sapi_name()=='cgi'||php_sapi_name()=='isapi' ||php_sapi_name()=='cgi-fcgi')&&($_SERVER['ORIG_PATH_TRANSLATED']?$_SERVER['ORIG_PATH_TRANSLATED']:$_SERVER['PATH_TRANSLATED'])? ($_SERVER['ORIG_PATH_TRANSLATED']?$_SERVER['ORIG_PATH_TRANSLATED']:$_SERVER['PATH_TRANSLATED']):($_SERVER['ORIG_SCRIPT_FILENAME']?$_SERVER['ORIG_SCRIPT_FILENAME']:$_SERVER['SCRIPT_FILENAME']))));
 
-define('PATH_site', str_replace ('/wsdl', '', dirname(PATH_thisScript)).'/');
+define('PATH_site', str_replace(array('/wsdl', '/typo3conf/ext/ter'), '', dirname(PATH_thisScript)) . '/');
 define('PATH_t3lib', PATH_site.'t3lib/');
 define('PATH_typo3', PATH_site.'typo3/');
 define('PATH_tslib', PATH_typo3.'sysext/cms/tslib/');
