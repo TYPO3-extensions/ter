@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<T3locallang>
+	<meta type="array">
+		<description>language labels for ter extension</description>
+		<type>plugin</type>
+	</meta>
+	<data type="array">
+		<languageKey index="default" type="array">
+			<label index="tx_ter_extensionkeys">Extension key</label>
+			<label index="tx_ter_extensionkeys.title">Title</label>
+			<label index="tx_ter_extensionkeys.description">Description</label>
+			<label index="tx_ter_extensionkeys.extensionkey">Extension key</label>
+			<label index="tx_ter_extensionkeys.ownerusername">Owner username</label>
+			<label index="tx_ter_extensionkeys.maxstoresize">Max store size</label>
+			<label index="tx_ter_extensionkeys.downloadcounter">Download counter</label>
+			<label index="tx_ter_extensionmembers">Extension member</label>
+			<label index="tx_ter_extensionmembers.extensionkey">Extension key</label>
+			<label index="tx_ter_extensionmembers.username">Username</label>
+			<label index="tx_ter_extensions">Extension</label>
+			<label index="tx_ter_extensions.extensionkey">Extension key</label>
+			<label index="tx_ter_extensions.version">Version</label>
+			<label index="tx_ter_extensions.title">Title</label>
+			<label index="tx_ter_extensions.description">Description</label>
+			<label index="tx_ter_extensions.state">State</label>
+			<label index="tx_ter_extensions.reviewstate">Review state</label>
+			<label index="tx_ter_extensions.category">Category</label>
+			<label index="tx_ter_extensions.downloadcounter">Download counter</label>
+			<label index="tx_ter_extensions.ismanualincluded">Manual included</label>
+			<label index="tx_ter_extensions.t3xfilemd5">File hash</label>
+			<label index="tx_ter_extensiondetails">Extension detail</label>
+			<label index="tx_ter_extensiondetails.extensionuid">Extension ID</label>
+			<label index="tx_ter_extensiondetails.uploadcomment">Upload comment</label>
+			<label index="tx_ter_extensiondetails.lastuploadbyusername">Last uploaded by</label>
+			<label index="tx_ter_extensiondetails.lastuploaddate">Last upload date</label>
+			<label index="tx_ter_extensiondetails.datasize">Data size</label>
+			<label index="tx_ter_extensiondetails.datasizecompressed">Data size compressed</label>
+			<label index="tx_ter_extensiondetails.files">Files</label>
+			<label index="tx_ter_extensiondetails.codelines">Lines of code</label>
+			<label index="tx_ter_extensiondetails.codebytes">Bytes of code</label>
+			<label index="tx_ter_extensiondetails.techinfo">Technical information</label>
+			<label index="tx_ter_extensiondetails.shy">Is shy</label>
+			<label index="tx_ter_extensiondetails.dependencies">Dependencies</label>
+			<label index="tx_ter_extensiondetails.createdirs">Create dirs</label>
+			<label index="tx_ter_extensiondetails.priority">Priority</label>
+			<label index="tx_ter_extensiondetails.modules">Modules</label>
+			<label index="tx_ter_extensiondetails.uploadfolder">Upload folder</label>
+			<label index="tx_ter_extensiondetails.modifytables">Modify tables</label>
+			<label index="tx_ter_extensiondetails.clearcacheonload">Clear cache on load</label>
+			<label index="tx_ter_extensiondetails.locktype">Lock time</label>
+			<label index="tx_ter_extensiondetails.authorname">Author name</label>
+			<label index="tx_ter_extensiondetails.authoremail">Author email</label>
+			<label index="tx_ter_extensiondetails.authorcompany">Author company</label>
+			<label index="tx_ter_extensiondetails.codingguidelinescompliance">CGL</label>
+			<label index="tx_ter_extensiondetails.codingguidelinescompliancenote">CGL notes</label>
+			<label index="tx_ter_extensiondetails.loadorder">Load order</label>
+		</languageKey>
+	</data>
+</T3locallang>
