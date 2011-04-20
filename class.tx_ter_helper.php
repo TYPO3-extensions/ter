@@ -418,6 +418,42 @@ class tx_ter_helper {
 		$string = (preg_replace('/[^\w\s"%&\[\]\(\)\.\,\;\:\/\?\{\}!\$\-\/\@]/','',$string));
 		return str_replace ( array ( '&', '"', "'", '<', '>' ), array ( '&amp;' , '&quot;', '&apos;' , '&lt;' , '&gt;' ), $string );
 	}
+
+
+	/***
+	 * Load an instance of the BE_USER to use with TCEFORM
+	 * 
+	 * @param integer $uid UID of the virtual user
+	 * @param string $username Username
+	 * @param boolean $isAdmin Set admin rights
+	 * @return void
+	 */
+	public function loadBackendUser($uid, $username, $isAdmin = FALSE) {
+		if (!empty($GLOBALS['BE_USER'])) {
+			return;
+		}
+
+		$GLOBALS['BE_USER'] = t3lib_div::makeInstance('t3lib_tsfeBeUserAuth');
+		$GLOBALS['BE_USER']->dontSetCookie = TRUE;
+		$GLOBALS['BE_USER']->start();
+		$GLOBALS['BE_USER']->user = array(
+			'uid'      => (int) $uid,
+			'username' => $username,
+			'admin'    => (int) $isAdmin,
+		);
+	}
+
+
+	/**
+	 * Load an instance of the LANG object
+	 * 
+	 * @param string $language Used language ident
+	 * @return void
+	 */
+	public function loadLang($lang = 'default') {
+		$GLOBALS['LANG'] = t3lib_div::makeInstance('language');
+		$GLOBALS['LANG']->init($lang);
+	}
 }
 
 ?>

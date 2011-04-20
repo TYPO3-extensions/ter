@@ -85,6 +85,7 @@ class tx_ter_api {
 	protected	$helperObj;
 	protected	$parentObj;
 	protected	$cObj;
+	protected	$tce;
 
 	protected	$extensionMaxUploadSize = 31457280;					// 30MB Maximum upload size for extensions
 
@@ -640,115 +641,99 @@ class tx_ter_api {
 	 * @access	protected
 	 */
 	protected function uploadExtension_writeExtensionInfoToDB ($accountData, $extensionInfoData, $filesData) {
-		global $TYPO3_DB;
-
-			// Prepare information about files:
+			// Prepare information about files
 		$extensionInfoData->technicalData->isManualIncluded = 0;
 		foreach ($filesData->fileData as $fileData) {
-			$extensionInfoData->infoData->files [$fileData->name] = array (
-				'filename' => $fileData->name,
-				'size' => $fileData->size,
-				'mtime' => $fileData->modificationTime,
+			$extensionInfoData->infoData->files [$fileData->name] = array(
+				'filename'      => $fileData->name,
+				'size'          => $fileData->size,
+				'mtime'         => $fileData->modificationTime,
 				'is_executable' => $fileData->isExecutable,
 			);
-			if ($fileData->name == 'doc/manual.sxw')	{
+			if ($fileData->name === 'doc/manual.sxw') {
 				$extensionInfoData->technicalData->isManualIncluded = 1;
 			}
 		}
 
-			// Prepare the new records:
-		$extensionsRow = array (
-			'tstamp' => time(),
-			'crdate' => time(),
-			'pid' => $this->parentObj->extensionsPID,
-			'extensionkey' => $extensionInfoData->extensionKey,
-			'version' => $extensionInfoData->version,
-			'title' => $extensionInfoData->metaData->title,
-			'description' => $extensionInfoData->metaData->description,
-			'state' => $extensionInfoData->metaData->state,
-			'category' => $extensionInfoData->metaData->category,
+			// Prepare the new records
+		$extensionRow = array(
+			'tstamp'           => $GLOBALS['SIM_EXEC_TIME'],
+			'crdate'           => $GLOBALS['SIM_EXEC_TIME'],
+			'pid'              => (int) $this->parentObj->extensionsPID,
+			'extensionkey'     => $extensionInfoData->extensionKey,
+			'version'          => $extensionInfoData->version,
+			'title'            => $extensionInfoData->metaData->title,
+			'description'      => $extensionInfoData->metaData->description,
+			'state'            => $extensionInfoData->metaData->state,
+			'category'         => $extensionInfoData->metaData->category,
 			'ismanualincluded' => $extensionInfoData->technicalData->isManualIncluded,
-			't3xfilemd5' => $extensionInfoData->t3xFileMD5,
-			'reviewstate' => 0
+			't3xfilemd5'       => $extensionInfoData->t3xFileMD5,
+			'reviewstate'      => 0,
 		);
 
-			// Either update an existing or insert a new extension record:
-		$result = $TYPO3_DB->exec_SELECTquery (
-			'uid',
-			'tx_ter_extensions',
-			'extensionkey ="'.$TYPO3_DB->quoteStr($extensionInfoData->extensionKey, 'tx_ter_extensions').'" AND version = "'.$TYPO3_DB->quoteStr($extensionInfoData->version, 'tx_ter_extensions').'"'
-		);
-		$existingExtensionsRow = $result ? $TYPO3_DB->sql_fetch_assoc ($result) : FALSE;
+			// Update an existing or insert a new extension record
+		$table = 'tx_ter_extensions';
+		$where = 'extensionkey = "' . $GLOBALS['TYPO3_DB']->quoteStr($extensionInfoData->extensionKey, $table) . '"
+				  AND version  = "' . $GLOBALS['TYPO3_DB']->quoteStr($extensionInfoData->version, $table)      . '"';
+		$extensionUid = $this->updateOrInsertRecord($table, $extensionRow, $where);
 
-		if (is_array($existingExtensionsRow)) {
-			$extensionUid = $existingExtensionsRow['uid'];
-			$result = $TYPO3_DB->exec_UPDATEquery (
-				'tx_ter_extensions',
-				'extensionkey ="'.$extensionInfoData->extensionKey.'"
-				 AND version = "'.$extensionInfoData->version.'"',
-				$extensionsRow
-			);
-		} else {
-			$result = $TYPO3_DB->exec_INSERTquery ('tx_ter_extensions', $extensionsRow);
-			$extensionUid = $TYPO3_DB->sql_insert_id();
-		}
-
+			// Get dependencies
 		$dependenciesArr = array();
 		if (is_array ($extensionInfoData->technicalData->dependencies)) {
 			foreach ($extensionInfoData->technicalData->dependencies as $dependency) {
-				$dependenciesArr[] = array (
-					'kind' => $dependency->kind,
+				$dependenciesArr[] = array(
+					'kind'         => $dependency->kind,
 					'extensionKey' => $dependency->extensionKey,
 					'versionRange' => $dependency->versionRange,
 				);
 			}
 		}
 
-		$extensionDetailsRow = array (
-			'extensionuid' => $extensionUid,
-			'uploadcomment' => $extensionInfoData->infoData->uploadComment,
-			'lastuploadbyusername' => $accountData->username,
-			'lastuploaddate' => time(),
-			'datasize' => $extensionInfoData->infoData->dataSize,
-			'datasizecompressed' => $extensionInfoData->infoData->dataSizeCompressed,
-			'files' => serialize ($extensionInfoData->infoData->files),
-			'codelines' => $extensionInfoData->infoData->codeLines,
-			'codebytes' => $extensionInfoData->infoData->codeBytes,
-			'techinfo' => serialize ($extensionInfoData->infoData->techInfo),
-			'shy' => (is_string($extensionInfoData->technicalData->shy) ? ($extensionInfoData->technicalData->shy == 'false' ? 0 : 1) : (boolean)$extensionInfoData->technicalData->shy ? 1: 0),
-			'dependencies' => serialize ($dependenciesArr),
-			'createdirs' => $extensionInfoData->technicalData->createDirs,
-			'priority' => $extensionInfoData->technicalData->priority,
-			'modules' => $extensionInfoData->technicalData->modules,
-			'uploadfolder' => (is_string($extensionInfoData->technicalData->uploadFolder) ? ($extensionInfoData->technicalData->uploadFolder == 'false' ? 0 : 1) : (boolean)$extensionInfoData->technicalData->uploadFolder ? 1: 0),
-			'modifytables' => $extensionInfoData->technicalData->modifyTables,
-			'clearcacheonload' => (is_string($extensionInfoData->technicalData->clearCacheOnLoad) ? ($extensionInfoData->technicalData->clearCacheOnLoad == 'false' ? 0 : 1) : (boolean)$extensionInfoData->technicalData->clearCacheOnLoad ? 1: 0),
-			'locktype' => $extensionInfoData->technicalData->lockType,
-			'authorname' => $extensionInfoData->metaData->authorName,
-			'authoremail' => $extensionInfoData->metaData->authorEmail,
-			'authorcompany' => $extensionInfoData->metaData->authorCompany,
-			'codingguidelinescompliance' => $extensionInfoData->infoData->codingGuidelinesCompliance,
-			'codingguidelinescompliancenote' =>$extensionInfoData->infoData->codingGuidelinesComplianceNote,
-			'loadorder' => $extensionInfoData->technicalData->loadOrder,
-		);
-
-			// Either update an existing or insert a new extension details record:
-		$result = $TYPO3_DB->exec_SELECTquery (
-			'uid',
-			'tx_ter_extensiondetails',
-			'extensionuid='.intval($extensionUid)
-		);
-		$existingExtensionDetailsRow = $result ? $TYPO3_DB->sql_fetch_assoc ($result) : FALSE;
-
-		if (is_array($existingExtensionDetailsRow)) {
-			$TYPO3_DB->exec_UPDATEquery (
-				'tx_ter_extensiondetails',
-				'uid='.intval($existingExtensionDetailsRow['uid']),
-				$extensionDetailsRow
-			);
-		} else {
-			$this->cObj->DBgetInsert('tx_ter_extensiondetails', $this->parentObj->extensionsPID, $extensionDetailsRow, implode (',',array_keys($extensionDetailsRow)), TRUE);
+			// Cleanup some attributes
+		$attributes = array('shy', 'uploadFolder', 'clearCacheOnLoad');
+		foreach ($attributes as $attribute) {
+			if (empty($extensionInfoData->technicalData->$attribute)
+			 || $extensionInfoData->technicalData->$attribute === 'false') {
+				$extensionInfoData->technicalData->$attribute = FALSE;
+			} else {
+				$extensionInfoData->technicalData->$attribute = TRUE;
+			}
 		}
+
+			// Prepare details row
+		$extensionDetailsRow = array (
+			'pid'                            => (int) $this->parentObj->extensionsPID,
+			'extensionuid'                   => (int) $extensionUid,
+			'uploadcomment'                  => $extensionInfoData->infoData->uploadComment,
+			'lastuploadbyusername'           => $accountData->username,
+			'lastuploaddate'                 => $GLOBALS['SIM_EXEC_TIME'],
+			'datasize'                       => $extensionInfoData->infoData->dataSize,
+			'datasizecompressed'             => $extensionInfoData->infoData->dataSizeCompressed,
+			'files'                          => serialize ($extensionInfoData->infoData->files),
+			'codelines'                      => $extensionInfoData->infoData->codeLines,
+			'codebytes'                      => $extensionInfoData->infoData->codeBytes,
+			'techinfo'                       => serialize ($extensionInfoData->infoData->techInfo),
+			'shy'                            => (int) $extensionInfoData->technicalData->shy,
+			'dependencies'                   => serialize ($dependenciesArr),
+			'createdirs'                     => $extensionInfoData->technicalData->createDirs,
+			'priority'                       => $extensionInfoData->technicalData->priority,
+			'modules'                        => $extensionInfoData->technicalData->modules,
+			'uploadfolder'                   => (int) $extensionInfoData->technicalData->uploadFolder,
+			'modifytables'                   => $extensionInfoData->technicalData->modifyTables,
+			'clearcacheonload'               => (int) $extensionInfoData->technicalData->clearCacheOnLoad,
+			'locktype'                       => $extensionInfoData->technicalData->lockType,
+			'authorname'                     => $extensionInfoData->metaData->authorName,
+			'authoremail'                    => $extensionInfoData->metaData->authorEmail,
+			'authorcompany'                  => $extensionInfoData->metaData->authorCompany,
+			'codingguidelinescompliance'     => $extensionInfoData->infoData->codingGuidelinesCompliance,
+			'codingguidelinescompliancenote' => $extensionInfoData->infoData->codingGuidelinesComplianceNote,
+			'loadorder'                      => $extensionInfoData->technicalData->loadOrder,
+		);
+
+			// Update an existing or insert a new extension details record
+		$table = 'tx_ter_extensiondetails';
+		$where = 'extensionuid = ' . (int) $extensionUid;
+		$this->updateOrInsertRecord($table, $extensionDetailsRow, $where);
 	}
 
 
@@ -1037,5 +1022,77 @@ class tx_ter_api {
 		);
 		if (!$res) throw new SoapFault (TX_TER_ERROR_GENERAL_DATABASEERROR, 'Database error while updating extension total download counter.');
 	}
+
+
+	/**
+	 * Update an existing or create a new database record
+	 * 
+	 * @param string $table Table name
+	 * @param array $recordData Record key <-> value pairs
+	 * @param array $where Where statement
+	 * @return integer UID of the new or updated record
+	 */
+	public function updateOrInsertRecord($table, array $recordData, $where = '') {
+		if (empty($table) || empty($recordData)) {
+			return FALSE;
+		}
+
+			// Load environment
+		if (empty($this->tce)) {
+			$this->helperObj->loadBackendUser(1, '_ter_', TRUE);
+			$GLOBALS['TSFE']->includeTCA();
+			$this->helperObj->loadLang();
+			$this->loadTceForm();
+		}
+
+			// Check if the record already exists and get UID if not given
+		$update = FALSE;
+		if (!empty($where)) {
+			$result = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow('uid', $table, $where);
+			if (!empty($result['uid'])) {
+				$update = TRUE;
+				if (empty($recordData['uid'])) {
+					$recordData['uid'] = $result['uid'];
+				}
+			}
+		}
+
+			// Get key name
+		$key = ($update ? (int) $recordData['uid'] : 'NEW' . uniqid());
+		unset($recordData['uid']);
+
+			// Data map for TCEMAIN record
+		$data = array(
+			$table => array(
+				$key => $recordData,
+			),
+		);
+
+			// Finally update or insert record
+		$this->tce->datamap = $data;
+		$this->tce->process_datamap();
+
+			// Remap NEW key to real UID
+		if (!empty($this->tce->substNEWwithIDs[$key])) {
+			$key = $this->tce->substNEWwithIDs[$key];
+		}
+
+		return (int) $key;
+	}
+
+
+	/**
+	 * Load an instance of the TCEMAIN object
+	 * 
+	 * @return void
+	 */
+	public function loadTceForm() {
+		$this->tce = t3lib_div::makeInstance('t3lib_TCEmain');
+		$this->tce->stripslashes_values = 0;
+		$this->tce->workspace = 0;
+		$this->tce->bypassWorkspaceRestrictions = TRUE;
+		$this->tce->start(array(), array());
+	}
+
 }
 ?>

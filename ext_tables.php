@@ -46,6 +46,7 @@ $TCA['tx_ter_extensions'] = array (
 $TCA['tx_ter_extensiondetails'] = array (
 	'ctrl' => array (
 		'label'             => 'extensionuid',
+		'label_userFunc'    => 'EXT:ter/class.tx_ter_tcaLabel.php:tx_ter_tcaLabel->getExtensionKey',
 		'default_sortby'    => 'ORDER BY extensionuid',
 		'title'             => 'LLL:EXT:ter/locallang_tca.xml:tx_ter_extensiondetails',
 		'iconfile'          => t3lib_extMgm::extRelPath($_EXTKEY) . 'tx_ter_extensiondetails.gif',

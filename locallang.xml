@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<T3locallang>
+	<meta type="array">
+		<description>language labels for ter extension</description>
+		<type>plugin</type>
+	</meta>
+	<data type="array">
+		<languageKey index="default" type="array">
+			<label index="tx_ter_updateExtensionIndexTask.name">Publish extension updates</label>
+			<label index="tx_ter_updateExtensionIndexTask.description">Write new extension details into TER Frontend tables</label>
+		</languageKey>
+	</data>
+</T3locallang>
