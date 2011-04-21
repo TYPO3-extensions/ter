@@ -505,7 +505,7 @@ class tx_ter_api {
 	protected function uploadExtension_writeExtensionAndIconFile (&$extensionInfoData, $filesData) {
 
 		if (!@is_dir ($this->parentObj->repositoryDir)) throw new SoapFault (TX_TER_ERROR_GENERAL_EXTREPDIRDOESNTEXIST, 'Extension repository directory does not exist.');
-		t3lib_div::devLog($filesData->fileData,'filesData->fileData',0);
+		//t3lib_div::devLog($filesData->fileData,'filesData->fileData',0);
 		if (!is_array ($filesData->fileData)) throw new SoapFault (TX_TER_ERROR_GENERAL_EXTENSIONCONTAINSNOFILES, 'Extension contains no files.');
 
 			// Prepare Files Data Array:

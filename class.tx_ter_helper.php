@@ -451,6 +451,10 @@ class tx_ter_helper {
 	 * @return void
 	 */
 	public function loadLang($lang = 'default') {
+		if (!empty($GLOBALS['LANG'])) {
+			return;
+		}
+
 		$GLOBALS['LANG'] = t3lib_div::makeInstance('language');
 		$GLOBALS['LANG']->init($lang);
 	}
