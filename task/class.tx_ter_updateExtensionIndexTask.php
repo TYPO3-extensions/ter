@@ -37,11 +37,6 @@
 		/**
 		 * @var string
 		 */
-		protected $updateFileName = 'extensions.xml.gz.needsupdate';
-
-		/**
-		 * @var string
-		 */
 		public $clearCachePages;
 
 
@@ -64,16 +59,8 @@
 				return FALSE;
 			}
 
-				// Trigger update
-			$repositoryDir = rtrim($extensionConfig['repositoryDir'], '/') . '/';
-			if (!file_exists($repositoryDir . $this->updateFileName)) {
-				return TRUE;
-			}
-
-				// Remove update trigger file
-			unlink($repositoryDir . $this->updateFileName);
-
 				// Write new extensions xml file
+			$repositoryDir = rtrim($extensionConfig['repositoryDir'], '/') . '/';
 			$dummyObject = new stdClass();
 			$dummyObject->repositoryDir = $repositoryDir;
 			$terHelper = t3lib_div::makeInstance('tx_ter_helper', $dummyObject);
