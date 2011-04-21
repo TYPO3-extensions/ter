@@ -10,6 +10,6 @@ $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['scheduler']['tasks']['tx_ter_updateEx
 	'extension'        => $_EXTKEY,
 	'title'            => 'LLL:EXT:' . $_EXTKEY . '/locallang.xml:tx_ter_updateExtensionIndexTask.name',
 	'description'      => 'LLL:EXT:' . $_EXTKEY . '/locallang.xml:tx_ter_updateExtensionIndexTask.description',
-	'additionalFields' => '',
+	'additionalFields' => 'tx_ter_updateExtensionIndexTask_additionalFieldProvider',
 );
 ?>

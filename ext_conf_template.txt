@@ -1,5 +1,2 @@
 # cat=basic/repository/100; type=string; label=Full path to the repository: Enter the full path to the local extension repository. Example: /var/www/fileadmin/ter/
 repositoryDir =
-
-# cat=basic/repository/110; type=int; label=ID of the repository page: UID of the TER Frontend page to clear cache after updating extension list
-repositoryPage =

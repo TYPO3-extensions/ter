@@ -8,5 +8,6 @@
 		'tx_ter_module1' => $extensionPath . 'mod1/index.php',
 		'tx_ter_pi1' => $extensionPath . 'pi1/class.tx_ter_pi1.php',
 		'tx_ter_updateextensionindextask' => $extensionPath . 'task/class.tx_ter_updateExtensionIndexTask.php',
+		'tx_ter_updateextensionindextask_additionalfieldprovider' => $extensionPath . 'task/class.tx_ter_updateExtensionIndexTask_additionalFieldProvider.php',
 	);
 ?>

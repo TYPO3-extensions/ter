@@ -8,6 +8,7 @@
 		<languageKey index="default" type="array">
 			<label index="tx_ter_updateExtensionIndexTask.name">Publish extension updates</label>
 			<label index="tx_ter_updateExtensionIndexTask.description">Write new extension details into TER Frontend tables</label>
+			<label index="tx_ter_updateExtensionIndexTask.clearCachePages">Clear cache of these pages after running task</label>
 		</languageKey>
 	</data>
 </T3locallang>

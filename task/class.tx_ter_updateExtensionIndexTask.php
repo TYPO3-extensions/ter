@@ -39,6 +39,11 @@
 		 */
 		protected $updateFileName = 'extensions.xml.gz.needsupdate';
 
+		/**
+		 * @var string
+		 */
+		public $clearCachePages;
+
 
 		/**
 		 * Public method, usually called by scheduler
@@ -75,13 +80,16 @@
 			$terHelper->writeExtensionIndexFile();
 
 				// Clear page cache to force reload of the extension list
-			if (!empty($extensionConfig['repositoryPage'])) {
+			$pageIds = t3lib_div::intExplode(',', $this->clearCachePages, TRUE);
+			if (!empty($pageIds)) {
 				$terHelper->loadBackendUser(1, '_ter_', TRUE);
 				$terHelper->loadLang();
 				$tce = t3lib_div::makeInstance('t3lib_TCEmain');
 				$tce->admin = 1;
 				$tce->start(array(), array());
-				$tce->clear_cacheCmd((int) $extensionConfig['repositoryPage']);
+				foreach ($pageIds as $pageId) {
+					$tce->clear_cacheCmd($pageId);
+				}
 			}
 
 			return TRUE;
