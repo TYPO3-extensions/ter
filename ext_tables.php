@@ -9,7 +9,7 @@ t3lib_div::loadTCA('tt_content');
 $TCA['tx_ter_extensionkeys'] = array (
 	'ctrl' => array (
 		'label'             => 'extensionkey',
-		'default_sortby'    => 'ORDER BY title',
+		'default_sortby'    => 'ORDER BY extensionkey',
 		'tstamp'            => 'tstamp',
 		'crdate'            => 'crdate',
 		'title'             => 'LLL:EXT:ter/locallang_tca.xml:tx_ter_extensionkeys',
@@ -66,6 +66,6 @@ t3lib_extMgm::allowTableOnStandardPages('tx_ter_extensions');
 t3lib_extMgm::allowTableOnStandardPages('tx_ter_extensiondetails');
 
 	// Add static configuration files
-t3lib_extMgm::addStaticFile($_EXTKEY, 'resources/static/', 'TYPO3 Extension Repository');
+t3lib_extMgm::addStaticFile($_EXTKEY, 'resources/static/', 'TER Server');
 
 ?>
