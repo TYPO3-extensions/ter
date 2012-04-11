@@ -183,8 +183,8 @@ $TCA['tx_ter_extensions'] = array (
 			'label' => 'LLL:EXT:ter/locallang_tca.xml:tx_ter_extensions.t3xfilemd5',
 			'config' => array (
 				'type' => 'input',
-				'size' => '40',
-				'max'  => '30',
+				'size' => '32',
+				'max'  => '32',
 				'eval' => 'trim',
 			),
 		),
