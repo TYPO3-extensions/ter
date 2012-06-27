@@ -155,7 +155,7 @@ class tx_ter_api {
 		$uploadUserRecordArr = $this->helperObj->getValidUser ($accountData);
 		$extensionKeyRecordArr = $this->helperObj->getExtensionKeyRecord ($extensionInfoData->extensionKey);
 		if ($extensionKeyRecordArr == FALSE) throw new SoapFault (TX_TER_ERROR_UPLOADEXTENSION_EXTENSIONDOESNTEXIST, 'Extension does not exist.');
-		if ($extensionKeyRecordArr['ownerusername'] != $accountData->username && $uploadUserRecordArr['admin'] !== TRUE) throw new SoapFault (TX_TER_ERROR_UPLOADEXTENSION_ACCESSDENIED, 'Access denied.');
+		if (strtolower($extensionKeyRecordArr['ownerusername']) !== strtolower($accountData->username) && $uploadUserRecordArr['admin'] !== TRUE) throw new SoapFault (TX_TER_ERROR_UPLOADEXTENSION_ACCESSDENIED, 'Access denied.');
 
 		$this->uploadExtension_writeExtensionAndIconFile ($extensionInfoData, $filesData);
 		$this->uploadExtension_writeExtensionInfoToDB ($accountData, $extensionInfoData, $filesData);
