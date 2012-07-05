@@ -126,7 +126,7 @@ $TCA['tx_ter_extensions'] = array (
 			'config' => array (
 				'type' => 'input',
 				'size' => '40',
-				'max'  => '30',
+				'max'  => '50',
 				'eval' => 'trim',
 			),
 		),
