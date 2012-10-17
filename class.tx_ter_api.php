@@ -831,7 +831,7 @@ class tx_ter_api {
 		}
 
 			// Bad prefixes:
-		$badPrefixesArr = array ('tx', 'u', 'user_', 'pages', 'tt_', 'sys_', 'ts_language_', 'csh_');
+		$badPrefixesArr = array ('tx', 'user_', 'pages', 'tt_', 'sys_', 'ts_language_', 'csh_');
 		foreach ($badPrefixesArr as $prefix) {
 			if (t3lib_div::isFirstPartOfStr($extensionKey, $prefix))	{
 				$ok = FALSE;
