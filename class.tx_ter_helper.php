@@ -180,7 +180,7 @@ class tx_ter_helper {
 			);
 
 			if ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res)) {
-				$objPHPass = tx_saltedpasswords_salts_factory::getSaltingInstance($accountData->password);
+				$objPHPass = tx_saltedpasswords_salts_factory::getSaltingInstance($row['password']);
 				// we do not consider 'C' or 'M' prefixed salted password hashes
 				// as password strings on typo3.org are not updated ones
 				if ($row['password'] === $accountData->password || $objPHPass->checkPassword($accountData->password, $row['password'])) {
