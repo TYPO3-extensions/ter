@@ -378,7 +378,7 @@
   <wsdl:message name="loginResponse">
     <wsdl:part name="returnValue" type="xsd:boolean"/>
   </wsdl:message>
-  <wsdl:message name="logingRequest">
+  <wsdl:message name="loginRequest">
     <wsdl:part name="accountData" type="tns:accountData"></wsdl:part>
   </wsdl:message>
   <wsdl:message name="uploadExtensionResponse">
@@ -499,6 +499,7 @@
   <wsdl:binding name="tx_terSOAP" type="tns:tx_ter">
         <soap:binding style="rpc" transport="http://schemas.xmlsoap.org/soap/http"/>
         <wsdl:operation name="ping"><soap:operation soapAction="http://www.typo3.org/wsdl/tx_ter/ping"/><wsdl:input><soap:body use="literal" namespace="http://www.typo3.org/wsdl/tx_ter/"/></wsdl:input><wsdl:output><soap:body use="literal" namespace="http://www.typo3.org/wsdl/tx_ter/"/></wsdl:output></wsdl:operation>
+        <wsdl:operation name="login"><soap:operation soapAction="http://www.typo3.org/wsdl/tx_ter/login"/><wsdl:input><soap:body use="literal" namespace="http://www.typo3.org/wsdl/tx_ter/"/></wsdl:input><wsdl:output><soap:body use="literal" namespace="http://www.typo3.org/wsdl/tx_ter/"/></wsdl:output></wsdl:operation>
         <wsdl:operation name="uploadExtension"><soap:operation soapAction="http://www.typo3.org/wsdl/tx_ter/uploadExtension"/><wsdl:input><soap:body use="literal" namespace="http://www.typo3.org/wsdl/tx_ter/"/></wsdl:input><wsdl:output><soap:body use="literal" namespace="http://www.typo3.org/wsdl/tx_ter/"/></wsdl:output></wsdl:operation>
         <wsdl:operation name="checkExtensionKey"><soap:operation soapAction="http://www.typo3.org/wsdl/tx_ter/checkExtensionKey"/><wsdl:input><soap:body use="literal" namespace="http://www.typo3.org/wsdl/tx_ter/"/></wsdl:input><wsdl:output><soap:body use="literal" namespace="http://www.typo3.org/wsdl/tx_ter/"/></wsdl:output></wsdl:operation>
         <wsdl:operation name="registerExtensionKey"><soap:operation soapAction="http://www.typo3.org/wsdl/tx_ter/registerExtensionKey"/><wsdl:input><soap:body use="literal" namespace="http://www.typo3.org/wsdl/tx_ter/"/></wsdl:input><wsdl:output><soap:body use="literal" namespace="http://www.typo3.org/wsdl/tx_ter/"/></wsdl:output></wsdl:operation>
