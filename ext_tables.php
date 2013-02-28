@@ -55,6 +55,17 @@ $TCA['tx_ter_extensiondetails'] = array (
 	)
 );
 
+$TCA['tx_ter_extensionqueue'] = array (
+	'ctrl' => array (
+		'label'             => 'extensionkey',
+		'default_sortby'    => 'ORDER BY extensionuid',
+		'title'             => 'LLL:EXT:ter/locallang_tca.xml:tx_ter_extensionqueue',
+		'iconfile'          => t3lib_extMgm::extRelPath($_EXTKEY) . 'tx_ter_extensionqueue.gif',
+		'dynamicConfigFile' => t3lib_extMgm::extPath($_EXTKEY) . 'tca.php',
+		'dividers2tabs'     => TRUE,
+	)
+);
+
 	// Remove the old "CODE", "Layout" and the "recursive" fields
 $TCA['tt_content']['types']['list']['subtypes_excludelist'][$_EXTKEY . '_pi1'] = 'layout,select_key,pages,recursive';
 
@@ -64,6 +75,7 @@ t3lib_extMgm::allowTableOnStandardPages('tx_ter_extensionkeys');
 t3lib_extMgm::allowTableOnStandardPages('tx_ter_extensionmembers');
 t3lib_extMgm::allowTableOnStandardPages('tx_ter_extensions');
 t3lib_extMgm::allowTableOnStandardPages('tx_ter_extensiondetails');
+t3lib_extMgm::allowTableOnStandardPages('tx_ter_extensionqueue');
 
 	// Add static configuration files
 t3lib_extMgm::addStaticFile($_EXTKEY, 'resources/static/', 'TER Server');

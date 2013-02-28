@@ -406,4 +406,39 @@ $TCA['tx_ter_extensiondetails'] = array (
 	)
 );
 
+// Configuration for table "tx_ter_extensionqueue"
+$TCA['tx_ter_extensionqueue'] = array (
+	'ctrl' => $TCA['tx_ter_extensionqueue']['ctrl'],
+	'interface' => array (
+		'showRecordFieldList' => '',
+	),
+	'columns' => array (
+		'extensionkey' => array (
+			'label' => 'LLL:EXT:ter/locallang_tca.xml:tx_ter_extensionqueue.extensionkey',
+			'config' => array (
+				'type' => 'input',
+				'size' => '20',
+				'max'  => '40',
+			),
+		),
+		'extensionuid' => array (
+			'label' => 'LLL:EXT:ter/locallang_tca.xml:tx_ter_extensionqueue.extensionuid',
+			'config' => array (
+				'type' => 'input',
+				'size' => '15',
+				'max'  => '11',
+			),
+		),
+		'imported_into_fe' => array (
+			'label' => 'LLL:EXT:ter/locallang_tca.xml:tx_ter_extensionqueue.imported_into_fe',
+			'config' => array (
+				'type' => 'checkbox'
+			),
+		),
+	),
+	'types' => array (
+		'1' => array('showitem' => 'extensionuid,extensionkey,imported_into_fe'),
+	)
+);
+
 ?>

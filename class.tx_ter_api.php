@@ -734,6 +734,20 @@ class tx_ter_api {
 		$table = 'tx_ter_extensiondetails';
 		$where = 'extensionuid = ' . (int) $extensionUid;
 		$this->updateOrInsertRecord($table, $extensionDetailsRow, $where);
+
+			// Put new extension version into queue
+		$extensionQueue = array(
+			'pid'				=> (int) $this->parentObj->extensionsPID,
+			'extensionuid'		=> (int) $extensionUid,
+			'extensionkey'		=> $extensionInfoData->extensionKey,
+			'crdate'			=> time(),
+			'tstamp'			=> time(),
+			'imported_into_fe'	=> 0,
+			'deleted'			=> 0
+		);
+
+		$table = 'tx_ter_extensionqueue';
+		$this->updateOrInsertRecord($table, $extensionQueue);
 	}
 
 
