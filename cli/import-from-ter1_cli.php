@@ -475,7 +475,7 @@ function writeExtensionInfoToDB ($accountData, $extensionData, $filesData, $exte
 	function writeExtensionIndexfile ()	{
 		global $TYPO3_DB;
 
-		if (!@is_dir ($GLOBALS['repositoryDir'])) throw new SoapFault (TX_TER_ERROR_GENERAL_EXTREPDIRDOESNTEXIST, 'Extension repository directory does not exist.');
+		if (!@is_dir ($GLOBALS['repositoryDir'])) throw new tx_ter_exception_internalServerError ('Extension repository directory does not exist.', TX_TER_ERROR_GENERAL_EXTREPDIRDOESNTEXIST);
 
 		$trackTime = microtime();
 
@@ -547,7 +547,7 @@ function writeExtensionInfoToDB ($accountData, $extensionData, $filesData, $exte
 		
 			// Write XML data to disc:
 		$fh = fopen ($GLOBALS['repositoryDir'].'cli-extensions.xml.gz', 'wb');
-		if (!$fh) throw new SoapFault (TX_TER_ERROR_UPLOADEXTENSION_WRITEERRORWHILEWRITINGEXTENSIONSINDEX, 'Write error while writing extensions index file: '.$GLOBALS['repositoryDir'].'extensions.xml');
+		if (!$fh) throw new tx_ter_exception_internalServerError ('Write error while writing extensions index file: '.$GLOBALS['repositoryDir'].'extensions.xml', TX_TER_ERROR_UPLOADEXTENSION_WRITEERRORWHILEWRITINGEXTENSIONSINDEX);
 		fwrite ($fh, gzencode ($dom->saveXML(), 9));
 		fclose ($fh);
 			

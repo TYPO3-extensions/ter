@@ -136,7 +136,7 @@ class tx_ter_helper {
 		global $TYPO3_DB, $TSFE;
 
 		if (!strlen($accountData->username) || (!strlen($accountData->password))) {
-			throw new SoapFault (TX_TER_ERROR_GENERAL_NOUSERORPASSWORD, 'No user or no password submitted.');
+			throw new tx_ter_exception_unauthorized ('No user or no password submitted.', TX_TER_ERROR_GENERAL_NOUSERORPASSWORD);
 		}
 
 		$res = $TYPO3_DB->exec_SELECTquery(
@@ -150,10 +150,10 @@ class tx_ter_helper {
 				// we do not consider 'C' or 'M' prefixed salted password hashes
 				// as password strings on typo3.org are not updated ones
 			if ($row['password'] !== $accountData->password && !$objPHPass->checkPassword($accountData->password, $row['password'])) {
-				throw new SoapFault (TX_TER_ERROR_GENERAL_WRONGPASSWORD, 'Wrong password.');
+				throw new tx_ter_exception_unauthorized ('Wrong password.', TX_TER_ERROR_GENERAL_WRONGPASSWORD);
 			}
 		} else {
-			throw new SoapFault (TX_TER_ERROR_GENERAL_USERNOTFOUND, 'The specified user does not exist.');
+			throw new tx_ter_exception_unauthorized ('The specified user does not exist.', TX_TER_ERROR_GENERAL_USERNOTFOUND);
 		}
 
 		$row['admin'] = (intval($this->pluginObj->conf['adminFrontendUsergroupUid']) && t3lib_div::inList($row['usergroup'], $this->pluginObj->conf['adminFrontendUsergroupUid']));
@@ -162,7 +162,7 @@ class tx_ter_helper {
 	}
 
 	/**
-	 * Checks for correct account data without throwing SoapFault.
+	 * Checks for correct account data without throwing an exception.
 	 * It just returns TRUE / FALSE
 	 *
 	 * @param  object $accountData
@@ -305,7 +305,7 @@ class tx_ter_helper {
 		global $TYPO3_DB;
 
 		t3lib_div::devLog	('writing extension index!', 'tx_ter_helper', 0);
-		if (!@is_dir ($this->pluginObj->repositoryDir)) throw new SoapFault (TX_TER_ERROR_GENERAL_EXTREPDIRDOESNTEXIST, 'Extension repository directory does not exist.');
+		if (!@is_dir ($this->pluginObj->repositoryDir)) throw new tx_ter_exception_internalServerError ('Extension repository directory does not exist.', TX_TER_ERROR_GENERAL_EXTREPDIRDOESNTEXIST);
 
 		$trackTime = microtime();
 
@@ -374,13 +374,13 @@ class tx_ter_helper {
 
 			// Write XML data to disk:
 		$fh = fopen ($this->pluginObj->repositoryDir.'new-extensions.xml.gz', 'wb');
-		if (!$fh) throw new SoapFault (TX_TER_ERROR_UPLOADEXTENSION_WRITEERRORWHILEWRITINGEXTENSIONSINDEX, 'Write error while writing extensions index file: '.$this->pluginObj->repositoryDir.'extensions.xml');
+		if (!$fh) throw new tx_ter_exception_internalServerError ('Write error while writing extensions index file: '.$this->pluginObj->repositoryDir.'extensions.xml', TX_TER_ERROR_UPLOADEXTENSION_WRITEERRORWHILEWRITINGEXTENSIONSINDEX);
 		fwrite ($fh, gzencode ($dom->saveXML(), 9));
 		fclose ($fh);
 
 		if (!@filesize($this->pluginObj->repositoryDir.'new-extensions.xml.gz') > 0) {
 			t3lib_div::devLog	('Newly created extension index is zero bytes!', 'tx_ter_helper', 0);
-			throw new SoapFault (TX_TER_ERROR_UPLOADEXTENSION_WRITEERRORWHILEWRITINGEXTENSIONSINDEX, 'Write error while writing extensions index file (zero bytes): '.$this->pluginObj->repositoryDir.'extensions.xml');
+			throw new tx_ter_exception_internalServerError ('Write error while writing extensions index file (zero bytes): '.$this->pluginObj->repositoryDir.'extensions.xml', TX_TER_ERROR_UPLOADEXTENSION_WRITEERRORWHILEWRITINGEXTENSIONSINDEX);
 		}
 
 		@unlink ($this->pluginObj->repositoryDir.'extensions.xml.gz');
@@ -390,13 +390,13 @@ class tx_ter_helper {
 
 			// Write serialized array file to disk:
 		$fh = fopen ($this->pluginObj->repositoryDir.'new-extensions.bin', 'wb');
-		if (!$fh) throw new SoapFault (TX_TER_ERROR_UPLOADEXTENSION_WRITEERRORWHILEWRITINGEXTENSIONSINDEX, 'Write error while writing extensions index file: '.$this->pluginObj->repositoryDir.'extensions.bin');
+		if (!$fh) throw new tx_ter_exception_internalServerError ('Write error while writing extensions index file: '.$this->pluginObj->repositoryDir.'extensions.bin', TX_TER_ERROR_UPLOADEXTENSION_WRITEERRORWHILEWRITINGEXTENSIONSINDEX);
 		fwrite ($fh, serialize($extensionsAndVersionsArr));
 		fclose ($fh);
 
 		if (!@filesize($this->pluginObj->repositoryDir.'new-extensions.bin') > 0) {
 			t3lib_div::devLog	('Newly created extension index is zero bytes!', 'tx_ter_helper', 0);
-			throw new SoapFault (TX_TER_ERROR_UPLOADEXTENSION_WRITEERRORWHILEWRITINGEXTENSIONSINDEX, 'Write error while writing extensions index file (zero bytes): '.$this->pluginObj->repositoryDir.'extensions.bin');
+			throw new tx_ter_exception_internalServerError ('Write error while writing extensions index file (zero bytes): '.$this->pluginObj->repositoryDir.'extensions.bin', TX_TER_ERROR_UPLOADEXTENSION_WRITEERRORWHILEWRITINGEXTENSIONSINDEX);
 		}
 
 		@unlink ($this->pluginObj->repositoryDir.'extensions.bin');

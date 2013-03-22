@@ -71,9 +71,34 @@ class tx_ter_pi1 extends tslib_pibase {
 			if (substr ($this->repositoryDir, -1, 1) != '/') $this->repositoryDir .= '/';
 		}
 
-		$server = new SoapServer(NULL, array ('uri' => 'http://typo3.org/soap/tx_ter'));
-		$server->setClass ('tx_ter_api', $this);
-		$server->handle($GLOBALS['HTTP_RAW_POST_DATA']);
+		try {
+			$server = new SoapServer(NULL, array ('uri' => 'http://typo3.org/soap/tx_ter', "exceptions" => true));
+			$server->setClass ('tx_ter_api', $this);
+			$server->handle($GLOBALS['HTTP_RAW_POST_DATA']);
+		} catch(tx_ter_exception $e) {
+			/**
+			 * @author Christian Zenker <christian.zenker@599media.de>
+			 * @see http://forge.typo3.org/issues/44135
+			 *
+			 * SoapServer is a little nasty. When you throw a SoapFault (extends Exception) inside a soap call,
+			 * you won't have any possible chance of catching and handling that exception. SoapServer will instantly
+			 * return a 500 InternalServerError without any way of intervention.
+			 *
+			 * That's why there is an own set of exceptions defined that basically stand for a status code.
+			 */
+			$statusCode = 404;
+			if($e instanceof tx_ter_exception_unauthorized) {
+				$statusCode = 401;
+			} elseif($e instanceof tx_ter_exception_notFound) {
+				$statusCode = 404;
+			}  elseif($e instanceof tx_ter_exception_internalServerError) {
+				$statusCode = 500;
+			}
+			header(' ', true, $statusCode);
+			// flush to prevent Soap to change the status code
+			flush();
+			$server->fault($e->getCode(), $e->getMessage());
+		}
 		return '';
 	}
 }

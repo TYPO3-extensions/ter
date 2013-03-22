@@ -9,5 +9,9 @@
 		'tx_ter_pi1' => $extensionPath . 'pi1/class.tx_ter_pi1.php',
 		'tx_ter_updateextensionindextask' => $extensionPath . 'task/class.tx_ter_updateExtensionIndexTask.php',
 		'tx_ter_updateextensionindextask_additionalfieldprovider' => $extensionPath . 'task/class.tx_ter_updateExtensionIndexTask_additionalFieldProvider.php',
+		'tx_ter_exception' => $extensionPath . 'class.tx_ter_exception.php',
+		'tx_ter_exception_unauthorized' => $extensionPath . 'exception/class.tx_ter_exception_unauthorized.php',
+		'tx_ter_exception_internalservererror' => $extensionPath . 'exception/class.tx_ter_exception_internalServerError.php',
+		'tx_ter_exception_notfound' => $extensionPath . 'exception/class.tx_ter_exception_notFound.php',
 	);
 ?>

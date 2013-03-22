@@ -143,7 +143,7 @@ class tx_ter_api {
 	 * @param	object		$accountData: Username and passwords for upload the extension
 	 * @param	object		$extensionInfoData: The general extension information as received by the SOAP server
 	 * @param	array		$filesData: The array of file data objects as received by the SOAP server
-	 * @return	object		uploadExtensionResult object if upload was successful, otherwise a SoapFault exception is thrown.
+	 * @return	object		uploadExtensionResult object if upload was successful, otherwise an exception is thrown.
 	 * @access	public
 	 * @since	2.0.0
 	 */
@@ -154,8 +154,8 @@ class tx_ter_api {
 
 		$uploadUserRecordArr = $this->helperObj->getValidUser ($accountData);
 		$extensionKeyRecordArr = $this->helperObj->getExtensionKeyRecord ($extensionInfoData->extensionKey);
-		if ($extensionKeyRecordArr == FALSE) throw new SoapFault (TX_TER_ERROR_UPLOADEXTENSION_EXTENSIONDOESNTEXIST, 'Extension does not exist.');
-		if (strtolower($extensionKeyRecordArr['ownerusername']) !== strtolower($accountData->username) && $uploadUserRecordArr['admin'] !== TRUE) throw new SoapFault (TX_TER_ERROR_UPLOADEXTENSION_ACCESSDENIED, 'Access denied.');
+		if ($extensionKeyRecordArr == FALSE) throw new tx_ter_exception_notFound ('Extension does not exist.', TX_TER_ERROR_UPLOADEXTENSION_EXTENSIONDOESNTEXIST);
+		if (strtolower($extensionKeyRecordArr['ownerusername']) !== strtolower($accountData->username) && $uploadUserRecordArr['admin'] !== TRUE) throw new tx_ter_exception_unauthorized ('Access denied.', TX_TER_ERROR_UPLOADEXTENSION_ACCESSDENIED);
 
 		$this->uploadExtension_writeExtensionAndIconFile ($extensionInfoData, $filesData);
 		$this->uploadExtension_writeExtensionInfoToDB ($accountData, $extensionInfoData, $filesData);
@@ -176,7 +176,7 @@ class tx_ter_api {
 	 * @param	object		$accountData: Username and passwords for upload the extension (admin account required)
 	 * @param	string		$extensionKey: Extension key of the extension version to delete
 	 * @param	string		$version: Version string of the extension version to delete
-	 * @return	object		simpleResult object if extension could be deleted, otherwise a SoapFault exception is thrown.
+	 * @return	object		simpleResult object if extension could be deleted, otherwise an exception is thrown.
 	 * @access	public
 	 * @since	2.0.1
 	 */
@@ -186,9 +186,9 @@ class tx_ter_api {
 		if (TYPO3_DLOG) t3lib_div::devLog('tx_ter_api->deleteExtension()', 'ter', 0, 'Deletion of extension '.$extensionKey.' ('.$version.') by user '.$accountData->username);
 
 		$userRecordArr = $this->helperObj->getValidUser ($accountData);
-		if ($userRecordArr['admin'] !== TRUE) throw new SoapFault (TX_TER_ERROR_DELETEEXTENSION_ACCESS_DENIED, 'Access denied. You must be administrator in order to delete extensions');
+		if ($userRecordArr['admin'] !== TRUE) throw new tx_ter_exception_unauthorized ('Access denied. You must be administrator in order to delete extensions', TX_TER_ERROR_DELETEEXTENSION_ACCESS_DENIED);
 		$extensionKeyRecordArr = $this->helperObj->getExtensionKeyRecord ($extensionKey);
-		if ($extensionKeyRecordArr == FALSE) throw new SoapFault (TX_TER_ERROR_DELETEEXTENSION_EXTENSIONDOESNTEXIST, 'Extension does not exist.');
+		if ($extensionKeyRecordArr == FALSE) throw new tx_ter_exception_notFound ('Extension does not exist.', TX_TER_ERROR_DELETEEXTENSION_EXTENSIONDOESNTEXIST);
 
 		$this->deleteExtension_deleteFromDBAndRemoveFiles($extensionKey, $version);
 		$this->helperObj->requestUpdateOfExtensionIndexFile();
@@ -204,7 +204,7 @@ class tx_ter_api {
 	 *
 	 * @param	object		$accountData: A valid username and password
 	 * @param	string		$extensionKey: The extension key to check
-	 * @return	object		simpleResult object if key could be checked, otherwise a SoapFault exception is thrown.
+	 * @return	object		simpleResult object if key could be checked, otherwise an exception is thrown.
 	 * @access	public
 	 * @since	2.0.0
 	 */
@@ -229,7 +229,7 @@ class tx_ter_api {
 	 *
 	 * @param	object		$accountData: A valid username and password
 	 * @param	object		$extensionKeyData: The extension key and other information
-	 * @return	object		simpleResult object if key was registered, otherwise a SoapFault exception is thrown.
+	 * @return	object		simpleResult object if key was registered, otherwise an exception is thrown.
 	 * @access	public
 	 * @since	2.0.0
 	 */
@@ -260,7 +260,7 @@ class tx_ter_api {
 	 *
 	 * @param	object		$accountData: A valid username and password
 	 * @param	object		$extensionKeyFilterOptions: Result will be filtered by fields set in these filter options
-	 * @return	object		getExtensionKeyRepsonse-object if key(s) could be fetched (might also be an empty result). A SoapFault exception is thrown if an error ocurred.
+	 * @return	object		getExtensionKeyRepsonse-object if key(s) could be fetched (might also be an empty result). An exception is thrown if an error ocurred.
 	 * @access	public
 	 * @since	2.0.0
 	 */
@@ -288,7 +288,7 @@ class tx_ter_api {
 			}
 			$resultCode = TX_TER_RESULT_GENERAL_OK;
 		} else {
-			throw new SoapFault (TX_TER_ERROR_GENERAL_DATABASEERROR, 'Database error while fetching extension keys.');
+			throw new tx_ter_exception_internalServerError ('Database error while fetching extension keys.', TX_TER_ERROR_GENERAL_DATABASEERROR);
 		}
 
 		return array (
@@ -305,7 +305,7 @@ class tx_ter_api {
 	 *
 	 * @param	object		$accountData: A valid username and password
 	 * @param	string		$extensionKey: The extension key to delete
-	 * @return	object		simpleResponse-object. A SoapFault exception is thrown if a fatal error ocurred.
+	 * @return	object		simpleResponse-object. An exception is thrown if a fatal error ocurred.
 	 * @access	public
 	 * @since	2.0.0
 	 */
@@ -317,7 +317,7 @@ class tx_ter_api {
 
 		if (is_array ($extensionKeyRecordArr)) {
 
-			if ($extensionKeyRecordArr['ownerusername'] != $accountData->username && $userRecordArr['admin'] !== TRUE) throw new SoapFault (TX_TER_ERROR_DELETEEXTENSIONKEY_ACCESSDENIED, 'Access denied.');
+			if ($extensionKeyRecordArr['ownerusername'] != $accountData->username && $userRecordArr['admin'] !== TRUE) throw new tx_ter_exception_unauthorized ('Access denied.', TX_TER_ERROR_DELETEEXTENSIONKEY_ACCESSDENIED);
 
 			$res = $TYPO3_DB->exec_SELECTquery (
 				'extensionkey',
@@ -333,12 +333,12 @@ class tx_ter_api {
 						'tx_ter_extensionkeys',
 						'extensionkey="'.$TYPO3_DB->quoteStr($extensionKey, 'tx_ter_extensions').'" AND pid='.intval($this->parentObj->extensionsPID)
 					);
-					if (!$res) throw new SoapFault (TX_TER_ERROR_GENERAL_DATABASEERROR, 'Database error while deleting extension key.');
+					if (!$res) throw new tx_ter_exception_internalServerError ('Database error while deleting extension key.', TX_TER_ERROR_GENERAL_DATABASEERROR);
 
 					$resultCode = TX_TER_RESULT_GENERAL_OK;
 				}
 			} else {
-				throw new SoapFault (TX_TER_ERROR_GENERAL_DATABASEERROR, 'Database error while fetching versions.');
+				throw new tx_ter_exception_internalServerError ('Database error while fetching versions.', TX_TER_ERROR_GENERAL_DATABASEERROR);
 			}
 		} else {
 			$resultCode = TX_TER_ERROR_DELETEEXTENSIONKEY_KEYDOESNOTEXIST;
@@ -355,7 +355,7 @@ class tx_ter_api {
 	 *
 	 * @param	object		$accountData: A valid username and password
 	 * @param	object		$modifyExtensionKeyData: Fields which should be changed, "extensionKey" is mandatory.
-	 * @return	object		simpleResponse-object. A SoapFault exception is thrown if a fatal error ocurred.
+	 * @return	object		simpleResponse-object. An exception is thrown if a fatal error ocurred.
 	 * @access	public
 	 * @since	2.0.0
 	 */
@@ -366,7 +366,7 @@ class tx_ter_api {
 		$extensionKeyRecordArr = $this->helperObj->getExtensionKeyRecord ($modifyExtensionKeyData->extensionKey);
 
 		if (is_array ($extensionKeyRecordArr)) {
-			if ($extensionKeyRecordArr['ownerusername'] != $accountData->username && $userRecordArr['admin'] !== TRUE) throw new SoapFault (TX_TER_ERROR_MODIFYEXTENSIONKEY_ACCESSDENIED, 'Access denied.');
+			if ($extensionKeyRecordArr['ownerusername'] != $accountData->username && $userRecordArr['admin'] !== TRUE) throw new tx_ter_exception_unauthorized ('Access denied.', TX_TER_ERROR_MODIFYEXTENSIONKEY_ACCESSDENIED);
 			$resultCode = $this->modifyExtensionKey_writeModifiedKeyRecordIntoDB ($accountData, $modifyExtensionKeyData);
 			$this->helperObj->requestUpdateOfExtensionIndexFile();
 		} else {
@@ -384,7 +384,7 @@ class tx_ter_api {
 	 *
 	 * @param	object		$accountData: A valid username and password
 	 * @param	object		$setReviewStateData: The extension key, version number and the new review state (integer)
-	 * @return	object		simpleResponse-object. A SoapFault exception is thrown if a fatal error ocurred.
+	 * @return	object		simpleResponse-object. An exception is thrown if a fatal error ocurred.
 	 * @access	public
 	 * @since	2.0.0
 	 */
@@ -394,8 +394,8 @@ class tx_ter_api {
 		$userRecordArr = $this->helperObj->getValidUser ($accountData);
 		$reviewersFrontendUsergroupUid = intval($this->parentObj->conf['reviewersFrontendUsergroupUid']);
 
-		if ($reviewersFrontendUsergroupUid == 0) throw new SoapFault (TX_TER_ERROR_SETREVIEWSTATE_NOUSERGROUPDEFINED, 'Warning: No usergroup for reviewers has been defined on the server side. Aborting ...');
-		if (!t3lib_div::inList($userRecordArr['usergroup'], $reviewersFrontendUsergroupUid)) throw new SoapFault (TX_TER_ERROR_SETREVIEWSTATE_ACCESSDENIED, 'Access denied.');
+		if ($reviewersFrontendUsergroupUid == 0) throw new tx_ter_exception_internalServerError ('Warning: No usergroup for reviewers has been defined on the server side. Aborting ...', TX_TER_ERROR_SETREVIEWSTATE_NOUSERGROUPDEFINED);
+		if (!t3lib_div::inList($userRecordArr['usergroup'], $reviewersFrontendUsergroupUid)) throw new tx_ter_exception_unauthorized ('Access denied.', TX_TER_ERROR_SETREVIEWSTATE_ACCESSDENIED);
 
 		$this->setReviewState_writeNewStateIntoDB($setReviewStateData);
 
@@ -413,7 +413,7 @@ class tx_ter_api {
 	 *
 	 * @param	object		$accountData: A valid username and password
 	 * @param	object		$extensionVersionsAndIncrementors: An array of extension keys, version numbers and the incrementor
-	 * @return	object		simpleResponse-object. A SoapFault exception is thrown if a fatal error ocurred.
+	 * @return	object		simpleResponse-object. An exception is thrown if a fatal error ocurred.
 	 * @access	public
 	 * @since	2.0.0
 	 */
@@ -428,11 +428,11 @@ class tx_ter_api {
 
 		if ($mirrorsFrontendUsergroupUid == 0) {
 			t3lib_div::devLog('DownloadCounter: No usergroup for mirrors has been defined on the server side. Aborting ...', 'tx_ter_api', 3);
-			throw new SoapFault (TX_TER_ERROR_INCREASEEXTENSIONDOWNLOADCOUNTER_NOUSERGROUPDEFINED, 'Warning: No usergroup for mirrors has been defined on the server side. Aborting ...');
+			throw new tx_ter_exception_internalServerError ('Warning: No usergroup for mirrors has been defined on the server side. Aborting ...', TX_TER_ERROR_INCREASEEXTENSIONDOWNLOADCOUNTER_NOUSERGROUPDEFINED);
 		}
 		if (!t3lib_div::inList($userRecordArr['usergroup'], $mirrorsFrontendUsergroupUid)) {
 			t3lib_div::devLog('DownloadCounter: Access denied for user ' . $accountData->username, 'tx_ter_api', 3, $userRecordArr);
-			throw new SoapFault (TX_TER_ERROR_INCREASEEXTENSIONDOWNLOADCOUNTER_ACCESSDENIED, 'Access denied.');
+			throw new tx_ter_exception_unauthorized ('Access denied.', TX_TER_ERROR_INCREASEEXTENSIONDOWNLOADCOUNTER_ACCESSDENIED);
 		}
 
 		$counter = 0;
@@ -441,7 +441,7 @@ class tx_ter_api {
 				try {
 					$this->increaseExtensionDownloadCounter_increaseCounterInDB($extensionVersionAndIncrementor);
 					$counter++;
-				} catch (SoapFault $exception) {
+				} catch (tx_ter_exception $exception) {
 					$errorMessages[] = '['.$extensionVersionAndIncrementor->extensionKey.']['.$extensionVersionAndIncrementor->version.'] '.$exception->faultstring;
 				}
 			}
@@ -450,7 +450,7 @@ class tx_ter_api {
 				$extensionVersionAndIncrementor = $extensionVersionsAndIncrementors->extensionVersionAndIncrementor;
 				$this->increaseExtensionDownloadCounter_increaseCounterInDB($extensionVersionAndIncrementor);
 				$counter++;
-			} catch (SoapFault $exception) {
+			} catch (tx_ter_exception $exception) {
 				$errorMessages[] = '['.$extensionVersionAndIncrementor->extensionKey.']['.$extensionVersionAndIncrementor->version.'] '.$exception->faultstring;
 			}
 		}
@@ -504,16 +504,16 @@ class tx_ter_api {
 	 */
 	protected function uploadExtension_writeExtensionAndIconFile (&$extensionInfoData, $filesData) {
 
-		if (!@is_dir ($this->parentObj->repositoryDir)) throw new SoapFault (TX_TER_ERROR_GENERAL_EXTREPDIRDOESNTEXIST, 'Extension repository directory does not exist.');
+		if (!@is_dir ($this->parentObj->repositoryDir)) throw new tx_ter_exception_internalServerError ('Extension repository directory does not exist.', TX_TER_ERROR_GENERAL_EXTREPDIRDOESNTEXIST);
 		//t3lib_div::devLog($filesData->fileData,'filesData->fileData',0);
-		if (!is_array ($filesData->fileData)) throw new SoapFault (TX_TER_ERROR_GENERAL_EXTENSIONCONTAINSNOFILES, 'Extension contains no files.');
+		if (!is_array ($filesData->fileData)) throw new tx_ter_exception_notFound ('Extension contains no files.', TX_TER_ERROR_GENERAL_EXTENSIONCONTAINSNOFILES);
 
 			// Prepare Files Data Array:
 		$preparedFilesDataArr = array();
 		foreach ($filesData->fileData as $fileData) {
 
 			$decodedContent = base64_decode ($fileData->content);
-			if ($fileData->contentMD5 != md5 ($decodedContent)) throw new SoapFault (TX_TER_ERROR_UPLOADEXTENSION_FILEMD5DOESNOTMATCH, 'MD5 does not match for file '.(string)$fileData->name);
+			if ($fileData->contentMD5 != md5 ($decodedContent)) throw new tx_ter_exception_notFound ('MD5 does not match for file '.(string)$fileData->name, TX_TER_ERROR_UPLOADEXTENSION_FILEMD5DOESNOTMATCH);
 
 			$preparedFilesDataArr[$fileData->name] = array (
 				'name' => $fileData->name,
@@ -593,7 +593,7 @@ class tx_ter_api {
 		$gifFileData = $preparedFilesDataArr['ext_icon.gif']['content'];
 
 			// Check if size of t3x file is too big:
-		if (strlen ($t3xFileData) > $this->extensionMaxUploadSize) throw new SoapFault (TX_TER_ERROR_UPLOADEXTENSION_EXTENSIONTOOBIG, 'The extension size exceeded '.$this->extensionMaxUploadSize.' bytes which is the maximum for extension uploads.');
+		if (strlen ($t3xFileData) > $this->extensionMaxUploadSize) throw new tx_ter_exception_notFound ('The extension size exceeded '.$this->extensionMaxUploadSize.' bytes which is the maximum for extension uploads.', TX_TER_ERROR_UPLOADEXTENSION_EXTENSIONTOOBIG);
 
 			// Create directories and build filenames:
 		$firstLetter = strtolower (substr ($extensionInfoData->extensionKey, 0, 1));
@@ -609,13 +609,13 @@ class tx_ter_api {
 
 			// Write the files
 		$fh = @fopen ($fullPath.$t3xFileName, 'wb');
-		if (!$fh) throw new SoapFault (TX_TER_ERROR_UPLOADEXTENSION_WRITEERRORWHILEWRITINGFILES, 'Write error while writing .t3x file: '.$fullPath.$t3xFileName);
+		if (!$fh) throw new tx_ter_exception_internalServerError ('Write error while writing .t3x file: '.$fullPath.$t3xFileName, TX_TER_ERROR_UPLOADEXTENSION_WRITEERRORWHILEWRITINGFILES);
 		fwrite ($fh, $t3xFileData);
 		fclose ($fh);
 
 		if (strlen ($gifFileData)) {
 			$fh = @fopen ($fullPath.$gifFileName, 'wb');
-			if (!$fh) throw new SoapFault (TX_TER_ERROR_UPLOADEXTENSION_WRITEERRORWHILEWRITINGFILES, 'Write error while writing .gif file: '.$fullPath.$gifFileName);
+			if (!$fh) throw new tx_ter_exception_internalServerError ('Write error while writing .gif file: '.$fullPath.$gifFileName, TX_TER_ERROR_UPLOADEXTENSION_WRITEERRORWHILEWRITINGFILES);
 			fwrite ($fh, $gifFileData);
 			fclose ($fh);
 		}
@@ -768,7 +768,7 @@ class tx_ter_api {
 	protected function deleteExtension_deleteFromDBAndRemoveFiles ($extensionKey, $version) {
 		global $TYPO3_DB;
 
-		if (!@is_dir ($this->parentObj->repositoryDir)) throw new SoapFault (TX_TER_ERROR_GENERAL_EXTREPDIRDOESNTEXIST, 'Extension repository directory does not exist.');
+		if (!@is_dir ($this->parentObj->repositoryDir)) throw new tx_ter_exception_internalServerError ('Extension repository directory does not exist.', TX_TER_ERROR_GENERAL_EXTREPDIRDOESNTEXIST);
 
 		$result = $TYPO3_DB->exec_SELECTquery (
 			'uid',
@@ -776,11 +776,11 @@ class tx_ter_api {
 			'extensionkey="'.$TYPO3_DB->quoteStr($extensionKey, 'tx_ter_extensions').'" AND version="'.$TYPO3_DB->quoteStr($version, 'tx_ter_extensions').'" AND pid='.intval($this->parentObj->extensionsPID)
 		);
 		if (!$result) {
-			throw new SoapFault (TX_TER_ERROR_GENERAL_DATABASEERROR, 'Database error while selecting extension for deletion. (extensionkey: '.$extensionKey.' version: '.$version.')');
+			throw new tx_ter_exception_internalServerError ('Database error while selecting extension for deletion. (extensionkey: '.$extensionKey.' version: '.$version.')', TX_TER_ERROR_GENERAL_DATABASEERROR);
 		}
 		$extensionRow = $TYPO3_DB->sql_fetch_assoc($result);
 		if (!intval($extensionRow['uid'])) {
-			throw new SoapFault (TX_TER_ERROR_DELETEEXTENSION_EXTENSIONDOESNTEXIST, 'deleteExtension_deleteFromDBAndRemoveFiles: Extension does not exist. (extensionkey: '.$extensionKey.' version: '.$version.')');
+			throw new tx_ter_exception_internalServerError ('deleteExtension_deleteFromDBAndRemoveFiles: Extension does not exist. (extensionkey: '.$extensionKey.' version: '.$version.')', TX_TER_ERROR_DELETEEXTENSION_EXTENSIONDOESNTEXIST);
 		}
 
 		$result = $TYPO3_DB->exec_DELETEquery (
@@ -885,7 +885,7 @@ class tx_ter_api {
 		);
 		$result = $TYPO3_DB->exec_INSERTquery ('tx_ter_extensionkeys', $extensionKeysRow);
 		if (!$result) {
-			throw new SoapFault (TX_TER_ERROR_REGISTEREXTENSIONKEY_DBERRORWHILEINSERTINGKEY, 'Database error while inserting extension key.');
+			throw new tx_ter_exception_internalServerError ('Database error while inserting extension key.', TX_TER_ERROR_REGISTEREXTENSIONKEY_DBERRORWHILEINSERTINGKEY);
 		}
 	}
 
@@ -929,7 +929,7 @@ class tx_ter_api {
 			'extensionkey ="'.$TYPO3_DB->quoteStr($modifyExtensionKeyData->extensionKey, 'tx_ter_extensionkeys').'"',
 			$updateValues
 		);
-		if (!$res) throw new SoapFault (TX_TER_ERROR_GENERAL_DATABASEERROR, 'Database error while updating extension key.');
+		if (!$res) throw new tx_ter_exception_internalServerError ('Database error while updating extension key.', TX_TER_ERROR_GENERAL_DATABASEERROR);
 
 		return TX_TER_RESULT_GENERAL_OK;
 	}
@@ -960,8 +960,8 @@ class tx_ter_api {
 			'extensionkey ="'.$TYPO3_DB->quoteStr($setReviewStateData->extensionKey, 'tx_ter_extensions').'" AND '.
 				'version ="'.$TYPO3_DB->quoteStr($setReviewStateData->version, 'tx_ter_extensions').'"'
 		);
-		if (!$res) throw new SoapFault (TX_TER_ERROR_GENERAL_DATABASEERROR, 'Database error while searching for extension record.');
-		if ($TYPO3_DB->sql_num_rows($res) != 1) throw new SoapFault (TX_TER_ERROR_SETREVIEWSTATE_EXTENSIONVERSIONDOESNOTEXIST, 'Extension version does not exist.');
+		if (!$res) throw new tx_ter_exception_internalServerError ('Database error while searching for extension record.', TX_TER_ERROR_GENERAL_DATABASEERROR);
+		if ($TYPO3_DB->sql_num_rows($res) != 1) throw new tx_ter_exception_notFound ('Extension version does not exist.', TX_TER_ERROR_SETREVIEWSTATE_EXTENSIONVERSIONDOESNOTEXIST);
 
 		$res = $TYPO3_DB->exec_UPDATEquery (
 			'tx_ter_extensions',
@@ -969,7 +969,7 @@ class tx_ter_api {
 				'version ="'.$TYPO3_DB->quoteStr($setReviewStateData->version, 'tx_ter_extensions').'"',
 			array('reviewstate' => intval($setReviewStateData->reviewState))
 		);
-		if (!$res) throw new SoapFault (TX_TER_ERROR_GENERAL_DATABASEERROR, 'Database error while updating extension review state.');
+		if (!$res) throw new tx_ter_exception_internalServerError ('Database error while updating extension review state.', TX_TER_ERROR_GENERAL_DATABASEERROR);
 	}
 
 
@@ -999,12 +999,12 @@ class tx_ter_api {
 			'extensionkey ="'.$TYPO3_DB->quoteStr($extensionVersionDataAndIncrementor->extensionKey, 'tx_ter_extensions').'" AND '.
 				'version ="'.$TYPO3_DB->quoteStr($extensionVersionDataAndIncrementor->version, 'tx_ter_extensions').'"'
 		);
-		if (!$res) throw new SoapFault (TX_TER_ERROR_GENERAL_DATABASEERROR, 'Database error while searching for extension record.');
-		if ($TYPO3_DB->sql_num_rows($res) != 1) throw new SoapFault (TX_TER_ERROR_INCREASEEXTENSIONDOWNLOADCOUNTER_EXTENSIONVERSIONDOESNOTEXIST, 'Extension version does not exist.');
+		if (!$res) throw new tx_ter_exception_internalServerError ('Database error while searching for extension record.', TX_TER_ERROR_GENERAL_DATABASEERROR);
+		if ($TYPO3_DB->sql_num_rows($res) != 1) throw new tx_ter_exception_notFound ('Extension version does not exist.', TX_TER_ERROR_INCREASEEXTENSIONDOWNLOADCOUNTER_EXTENSIONVERSIONDOESNOTEXIST);
 
 		$currentRow = $TYPO3_DB->sql_fetch_assoc ($res);
 		$incrementor = (integer)($extensionVersionDataAndIncrementor->downloadCountIncrementor);
-		if ($incrementor !== abs($incrementor)) throw new SoapFault (TX_TER_ERROR_INCREASEEXTENSIONDOWNLOADCOUNTER_INCREMENTORNOTPOSITIVEINTEGER, 'The incrementor must be a positive integer value.');
+		if ($incrementor !== abs($incrementor)) throw new tx_ter_exception_notFound ('The incrementor must be a positive integer value.', TX_TER_ERROR_INCREASEEXTENSIONDOWNLOADCOUNTER_INCREMENTORNOTPOSITIVEINTEGER);
 		$newCounter = intval($currentRow['downloadcounter']) + $incrementor;
 
 		$res = $TYPO3_DB->exec_UPDATEquery (
@@ -1012,15 +1012,15 @@ class tx_ter_api {
 			'uid='.$currentRow['uid'],
 			array('downloadcounter' => $newCounter)
 		);
-		if (!$res) throw new SoapFault (TX_TER_ERROR_GENERAL_DATABASEERROR, 'Database error while updating extension download counter.');
+		if (!$res) throw new tx_ter_exception_internalServerError ('Database error while updating extension download counter.', TX_TER_ERROR_GENERAL_DATABASEERROR);
 
 		$res = $TYPO3_DB->exec_SELECTquery (
 			'uid, downloadcounter',
 			'tx_ter_extensionkeys',
 			'extensionkey ="'.$TYPO3_DB->quoteStr($extensionVersionDataAndIncrementor->extensionKey, 'tx_ter_extensions').'"'
 		);
-		if (!$res) throw new SoapFault (TX_TER_ERROR_GENERAL_DATABASEERROR, 'Database error while searching for extension key record.');
-		if ($TYPO3_DB->sql_num_rows($res) != 1) throw new SoapFault (TX_TER_ERROR_INCREASEEXTENSIONDOWNLOADCOUNTER_EXTENSIONKEYDOESNOTEXIST, 'Extension key does not exist.');
+		if (!$res) throw new tx_ter_exception_internalServerError ('Database error while searching for extension key record.', TX_TER_ERROR_GENERAL_DATABASEERROR);
+		if ($TYPO3_DB->sql_num_rows($res) != 1) throw new tx_ter_exception_notFound ('Extension key does not exist.', TX_TER_ERROR_INCREASEEXTENSIONDOWNLOADCOUNTER_EXTENSIONKEYDOESNOTEXIST);
 
 		$currentRow = $TYPO3_DB->sql_fetch_assoc ($res);
 		$newCounter = intval($currentRow['downloadcounter']) + $incrementor;
@@ -1030,7 +1030,7 @@ class tx_ter_api {
 			'uid='.$currentRow['uid'],
 			array('downloadcounter' => $newCounter)
 		);
-		if (!$res) throw new SoapFault (TX_TER_ERROR_GENERAL_DATABASEERROR, 'Database error while updating extension total download counter.');
+		if (!$res) throw new tx_ter_exception_internalServerError ('Database error while updating extension total download counter.', TX_TER_ERROR_GENERAL_DATABASEERROR);
 	}
 
 

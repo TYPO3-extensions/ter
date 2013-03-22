@@ -267,7 +267,7 @@ if ($options['dryrun']->value !== FALSE) {
 	try {
 		$result = $soapClient->ping('soapcheck');
 	}
-	catch (SoapFault $e) {
+	catch (tx_ter_exception $e) {
 		$output->outputText('failed' . chr(10), 'failure');
 		$output->outputText($e->getMessage() . chr(10) . chr(10), 'failure');
 		exit(3);
@@ -279,7 +279,7 @@ if ($options['dryrun']->value !== FALSE) {
 	try {
 		$result = $soapClient->increaseExtensionDownloadCounters($accountData, $extensionVersionsAndIncrementors);
 	}
-	catch (SoapFault $e) {
+	catch (tx_ter_exception $e) {
 		$output->outputText('failed' . chr(10), 'failure');
 		$output->outputText($e->getMessage() . chr(10) . chr(10), 'failure');
 		exit(3);
