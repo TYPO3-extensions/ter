@@ -410,9 +410,16 @@ $TCA['tx_ter_extensiondetails'] = array (
 $TCA['tx_ter_extensionqueue'] = array (
 	'ctrl' => $TCA['tx_ter_extensionqueue']['ctrl'],
 	'interface' => array (
-		'showRecordFieldList' => '',
+		'showRecordFieldList' => 'hidden, extensionkey, extensionuid, imported_to_fe',
 	),
 	'columns' => array (
+		'hidden' => array(
+			'exclude' => 1,
+			'label'   => 'LLL:EXT:lang/locallang_general.xml:LGL.hidden',
+			'config'  => array(
+				'type' => 'check',
+			),
+		),
 		'extensionkey' => array (
 			'label' => 'LLL:EXT:ter/locallang_tca.xml:tx_ter_extensionqueue.extensionkey',
 			'config' => array (
@@ -429,7 +436,7 @@ $TCA['tx_ter_extensionqueue'] = array (
 				'max'  => '11',
 			),
 		),
-		'imported_into_fe' => array (
+		'imported_to_fe' => array (
 			'label' => 'LLL:EXT:ter/locallang_tca.xml:tx_ter_extensionqueue.imported_into_fe',
 			'config' => array (
 				'type' => 'checkbox'

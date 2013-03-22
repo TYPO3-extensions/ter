@@ -109,6 +109,6 @@ CREATE TABLE tx_ter_extensionqueue (
   imported_to_fe tinyint(4) DEFAULT '0' NOT NULL,
 
   PRIMARY KEY (uid),
-  KEY imported (imported_to_fe),
+  KEY imported (imported_to_fe)
 );
 
