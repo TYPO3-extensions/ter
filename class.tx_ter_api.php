@@ -317,7 +317,7 @@ class tx_ter_api {
 
 		if (is_array ($extensionKeyRecordArr)) {
 
-			if ($extensionKeyRecordArr['ownerusername'] != $accountData->username && $userRecordArr['admin'] !== TRUE) throw new tx_ter_exception_unauthorized ('Access denied.', TX_TER_ERROR_DELETEEXTENSIONKEY_ACCESSDENIED);
+			if (strtolower($extensionKeyRecordArr['ownerusername']) != strtolower($accountData->username) && $userRecordArr['admin'] !== TRUE) throw new tx_ter_exception_unauthorized ('Access denied.', TX_TER_ERROR_DELETEEXTENSIONKEY_ACCESSDENIED);
 
 			$res = $TYPO3_DB->exec_SELECTquery (
 				'extensionkey',
@@ -366,7 +366,7 @@ class tx_ter_api {
 		$extensionKeyRecordArr = $this->helperObj->getExtensionKeyRecord ($modifyExtensionKeyData->extensionKey);
 
 		if (is_array ($extensionKeyRecordArr)) {
-			if ($extensionKeyRecordArr['ownerusername'] != $accountData->username && $userRecordArr['admin'] !== TRUE) throw new tx_ter_exception_unauthorized ('Access denied.', TX_TER_ERROR_MODIFYEXTENSIONKEY_ACCESSDENIED);
+			if (strtolower($extensionKeyRecordArr['ownerusername']) != strtolower($accountData->username) && $userRecordArr['admin'] !== TRUE) throw new tx_ter_exception_unauthorized ('Access denied.', TX_TER_ERROR_MODIFYEXTENSIONKEY_ACCESSDENIED);
 			$resultCode = $this->modifyExtensionKey_writeModifiedKeyRecordIntoDB ($accountData, $modifyExtensionKeyData);
 			$this->helperObj->requestUpdateOfExtensionIndexFile();
 		} else {
