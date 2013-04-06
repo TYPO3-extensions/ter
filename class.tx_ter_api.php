@@ -171,6 +171,46 @@ class tx_ter_api {
 	}
 
 	/**
+	 * Method for manually uploading an extension to the repository
+	 *
+	 * @param string $username Username for upload the extension
+	 * @param stdObj $extensionInfoData The general extension information
+	 * @param array $filesData The array of file data objects
+	 * @return boolean TRUE on success
+	 */
+	public static function uploadExtensionWithoutSoap($username, $extensionInfoData, $filesData) {
+		// Make an instance of the api
+		$extConf = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['ter']);
+		$dummyParentObject = (object) array(
+			'cObj' => t3lib_div::makeInstance('tslib_cObj'),
+			'extensionsPID' => $GLOBALS['TSFE']->tmpl->setup['plugin.']['tx_ter_pi1.']['pid'],
+			'repositoryDir' => $extConf['repositoryDir'],
+			'conf' => $GLOBALS['TSFE']->tmpl->setup['plugin.']['tx_ter_pi1.'],
+		);
+		$instance = t3lib_div::makeInstance('tx_ter_api', $dummyParentObject);
+		// Load user
+		$user = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow(
+			'*',
+			'fe_users',
+			'username="' . $GLOBALS['TYPO3_DB']->quoteStr($username, 'foo') . '"'
+		);
+		$accountData = (object) array('username' => $username);
+		// Load extension
+		$extensionKeyRecordArr = $instance->helperObj->getExtensionKeyRecord($extensionInfoData->extensionKey);
+		if ($extensionKeyRecordArr == FALSE) {
+			throw new tx_ter_exception_notFound ('Extension does not exist.', TX_TER_ERROR_UPLOADEXTENSION_EXTENSIONDOESNTEXIST);
+		}
+		if (strtolower($extensionKeyRecordArr['ownerusername']) !== strtolower($username)) {
+			throw new tx_ter_exception_unauthorized('Access denied.', TX_TER_ERROR_UPLOADEXTENSION_ACCESSDENIED);
+		}
+		// Upload...
+		$instance->uploadExtension_writeExtensionAndIconFile($extensionInfoData, $filesData);
+		$instance->uploadExtension_writeExtensionInfoToDB($accountData, $extensionInfoData, $filesData);
+		$instance->helperObj->requestUpdateOfExtensionIndexFile();
+		return TRUE;
+	}
+
+	/**
 	 * Method for deleting an extension version from the repository
 	 *
 	 * @param	object		$accountData: Username and passwords for upload the extension (admin account required)
@@ -502,7 +542,7 @@ class tx_ter_api {
 	 * @return	void
 	 * @access	protected
 	 */
-	protected function uploadExtension_writeExtensionAndIconFile (&$extensionInfoData, $filesData) {
+	public function uploadExtension_writeExtensionAndIconFile (&$extensionInfoData, $filesData) {
 
 		if (!@is_dir ($this->parentObj->repositoryDir)) throw new tx_ter_exception_internalServerError ('Extension repository directory does not exist.', TX_TER_ERROR_GENERAL_EXTREPDIRDOESNTEXIST);
 		//t3lib_div::devLog($filesData->fileData,'filesData->fileData',0);
@@ -640,7 +680,7 @@ class tx_ter_api {
 	 * @return	void
 	 * @access	protected
 	 */
-	protected function uploadExtension_writeExtensionInfoToDB ($accountData, $extensionInfoData, $filesData) {
+	public function uploadExtension_writeExtensionInfoToDB ($accountData, $extensionInfoData, $filesData) {
 			// Prepare information about files
 		$extensionInfoData->technicalData->isManualIncluded = 0;
 		foreach ($filesData->fileData as $fileData) {
@@ -1036,7 +1076,7 @@ class tx_ter_api {
 
 	/**
 	 * Update an existing or create a new database record
-	 * 
+	 *
 	 * @param string $table Table name
 	 * @param array $recordData Record key <-> value pairs
 	 * @param array $where Where statement
@@ -1093,7 +1133,7 @@ class tx_ter_api {
 
 	/**
 	 * Load an instance of the TCEMAIN object
-	 * 
+	 *
 	 * @return void
 	 */
 	public function loadTceForm() {

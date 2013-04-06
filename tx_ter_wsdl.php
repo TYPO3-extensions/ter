@@ -23,7 +23,7 @@
 ***************************************************************/
 /**
  * WSDL wrapper for the TYPO3 Extension Repository
- * 
+ *
  * Note: We expect that you call this script from a directory "wsdl" in the
  * site's main directory (PATH_site)
  *
@@ -31,7 +31,7 @@
  *
  * @author	Robert Lemke <robert@typo3.org>
  */
- 
+
 error_reporting (E_ALL ^ E_NOTICE);
 
 define('TYPO3_OS', stristr(PHP_OS,'win')&&!stristr(PHP_OS,'darwin')?'WIN':'');
