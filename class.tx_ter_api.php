@@ -157,6 +157,19 @@ class tx_ter_api {
 		if ($extensionKeyRecordArr == FALSE) throw new tx_ter_exception_notFound ('Extension does not exist.', TX_TER_ERROR_UPLOADEXTENSION_EXTENSIONDOESNTEXIST);
 		if (strtolower($extensionKeyRecordArr['ownerusername']) !== strtolower($accountData->username) && $uploadUserRecordArr['admin'] !== TRUE) throw new tx_ter_exception_unauthorized ('Access denied.', TX_TER_ERROR_UPLOADEXTENSION_ACCESSDENIED);
 
+		if (($typo3DependencyCheck = $this->checkExtensionDependencyOnSupportedTypo3Version($extensionInfoData)) !== TRUE) {
+			switch ($typo3DependencyCheck) {
+				case TX_TER_ERROR_UPLOADEXTENSION_TYPO3DEPENDENCYINCORRECT:
+					$message = 'Extension does not have a dependency for a supported version of TYPO3';
+					break;
+				case TX_TER_ERROR_UPLOADEXTENSION_TYPO3DEPENDENCYCHECKFAILED:
+				default:
+					$message = 'Check on dependency for a supported version of TYPO3 failed due to technical reasons';
+					break;
+			}
+			throw new SoapFault($typo3DependencyCheck, $message);
+		}
+
 		$this->uploadExtension_writeExtensionAndIconFile ($extensionInfoData, $filesData);
 		$this->uploadExtension_writeExtensionInfoToDB ($accountData, $extensionInfoData, $filesData);
 		$this->helperObj->requestUpdateOfExtensionIndexFile();
@@ -311,10 +324,10 @@ class tx_ter_api {
 		$extensionKeyDataArr = array();
 
 		$whereClause = 'pid='.intval($this->parentObj->extensionsPID);
-		if (isset ($extensionKeyFilterOptions->username)) $whereClause .= ' AND ownerusername LIKE "'.$TYPO3_DB->quoteStr ($extensionKeyFilterOptions->username, 'tx_ter_extensionkeys').'"';
-		if (isset ($extensionKeyFilterOptions->title)) $whereClause .= ' AND title LIKE "'.$TYPO3_DB->quoteStr ($extensionKeyFilterOptions->title, 'tx_ter_extensionkeys').'"';
-		if (isset ($extensionKeyFilterOptions->description)) $whereClause .= ' AND description LIKE "'.$TYPO3_DB->quoteStr ($extensionKeyFilterOptions->description, 'tx_ter_extensionkeys').'"';
-		if (isset ($extensionKeyFilterOptions->extensionKey)) $whereClause .= ' AND extensionkey LIKE "'.$TYPO3_DB->quoteStr ($extensionKeyFilterOptions->extensionKey, 'tx_ter_extensionkeys').'"';
+		if (!empty($extensionKeyFilterOptions->username)) $whereClause .= ' AND ownerusername LIKE "'.$TYPO3_DB->quoteStr ($extensionKeyFilterOptions->username, 'tx_ter_extensionkeys').'"';
+		if (!empty($extensionKeyFilterOptions->title)) $whereClause .= ' AND title LIKE "'.$TYPO3_DB->quoteStr ($extensionKeyFilterOptions->title, 'tx_ter_extensionkeys').'"';
+		if (!empty($extensionKeyFilterOptions->description)) $whereClause .= ' AND description LIKE "'.$TYPO3_DB->quoteStr ($extensionKeyFilterOptions->description, 'tx_ter_extensionkeys').'"';
+		if (!empty($extensionKeyFilterOptions->extensionKey)) $whereClause .= ' AND extensionkey LIKE "'.$TYPO3_DB->quoteStr ($extensionKeyFilterOptions->extensionKey, 'tx_ter_extensionkeys').'"';
 
 		$res = $TYPO3_DB->exec_SELECTquery (
 			'extensionkey,title,description,ownerusername',
@@ -845,6 +858,91 @@ class tx_ter_api {
 	}
 
 
+	/**
+	 * Checks if the extension has a dependency on one of the supported TYPO3 versions
+	 *
+	 * @param object $extensionInfoData Extension information as received from the SOAP interface
+	 * @return bool|integer True if success, error code in case of failure
+	 */
+	protected function checkExtensionDependencyOnSupportedTypo3Version($extensionInfoData) {
+		$result = TX_TER_ERROR_UPLOADEXTENSION_TYPO3DEPENDENCYCHECKFAILED;
+		$coreVersionData = t3lib_div::getUrl(PATH_site . $GLOBALS['TYPO3_CONF_VARS']['BE']['fileadminDir'] . 'currentcoredata.json');
+		$currentCores = json_decode($coreVersionData, TRUE);
+		if ($currentCores !== NULL) {
+			$result = TX_TER_ERROR_UPLOADEXTENSION_TYPO3DEPENDENCYINCORRECT;
+			// Collect currently supported core versions
+			$supportedCoreVersions = array();
+			$newestCoreVersion = '0.0.0';
+			foreach ($currentCores as $version => $coreInfo) {
+				// Only use keys that represent a branch number
+				if (preg_match('/^\d+\.\d+$/', $version)) {
+					if ($coreInfo['active'] === TRUE) {
+						$latestBranchVersion = $coreInfo['latest'];
+						if (!preg_match('/dev|alpha/', $latestBranchVersion)) {
+							$supportedCoreVersions[] = $latestBranchVersion;
+							if (version_compare($newestCoreVersion, $latestBranchVersion, '<')) {
+								$newestCoreVersion = $latestBranchVersion;
+							}
+						}
+					}
+				}
+			}
+			// clean newest core version
+			preg_match('/^(\d+)\.(\d+)\.(\d+)/', $newestCoreVersion, $matches);
+			$newestCoreVersion = $matches[1] . '.' . $matches[2] . '.99';
+			// Compare currently supported core version with the dependency in the extension
+			$typo3Range = '';
+			if (is_array($extensionInfoData->technicalData->dependencies)) {
+				foreach ($extensionInfoData->technicalData->dependencies as $dependency) {
+					if ($dependency->kind == 'depends' && $dependency->extensionKey == 'typo3') {
+						$typo3Range = $dependency->versionRange;
+						break;
+					}
+				}
+				list($lower, $upper) = t3lib_div::trimExplode('-', $typo3Range);
+				if (empty($lower) || empty($upper)) {
+					// Either part of the range is empty
+					$result = TX_TER_ERROR_UPLOADEXTENSION_TYPO3DEPENDENCYINCORRECT;
+				} else if (!preg_match('/\d+\.\d+\.\d+/', $lower) || !preg_match('/\d+\.\d+\.\d+/', $upper)) {
+					// Either part is not a full version number
+					$result = TX_TER_ERROR_UPLOADEXTENSION_TYPO3DEPENDENCYINCORRECT;
+				} else if (version_compare($lower, '0.0.0', '<=') || version_compare($upper, '0.0.0', '<=')) {
+					// Either part is a zero version (n < n.0 < n.0.0)
+					$result = TX_TER_ERROR_UPLOADEXTENSION_TYPO3DEPENDENCYINCORRECT;
+				} else if (version_compare($upper, $newestCoreVersion, '>')) {
+					// Upper limit is larger than newest core version
+					$result = TX_TER_ERROR_UPLOADEXTENSION_TYPO3DEPENDENCYINCORRECT;
+				} else {
+					// Check if at least one maintained branch is within range
+					foreach ($supportedCoreVersions as $coreVersion) {
+						if (version_compare($coreVersion, $lower, '>=') && version_compare($coreVersion, $upper, '<=')) {
+							$result = TRUE;
+							break;
+						}
+					}
+					if ($result === TRUE) {
+						// Check if the upper or lower limit is an existing branch
+						$upperBranchExists = FALSE;
+						$lowerBranchExists = FALSE;
+						foreach ($currentCores as $version => $coreInfo) {
+							// Only use keys that represent a branch number
+							if (preg_match('/^\d+\.\d+$/', $version)) {
+								if (t3lib_div::isFirstPartOfStr($lower, $version . '.')) {
+									$lowerBranchExists = TRUE;
+								}
+								if (t3lib_div::isFirstPartOfStr($upper, $version . '.')) {
+									$upperBranchExists = TRUE;
+								}
+							}
+						}
+						$result = ($lowerBranchExists && $upperBranchExists) ? TRUE :
+							TX_TER_ERROR_UPLOADEXTENSION_TYPO3DEPENDENCYINCORRECT;
+					}
+				}
+			}
+		}
+		return $result;
+	}
 
 
 

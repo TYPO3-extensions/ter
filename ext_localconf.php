@@ -12,4 +12,11 @@ $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['scheduler']['tasks']['tx_ter_updateEx
 	'description'      => 'LLL:EXT:' . $_EXTKEY . '/locallang.xml:tx_ter_updateExtensionIndexTask.description',
 	'additionalFields' => 'tx_ter_updateExtensionIndexTask_additionalFieldProvider',
 );
+// Register core version update task
+$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['scheduler']['tasks']['tx_ter_updateCurrentVersionListTask'] = array(
+	'extension'        => $_EXTKEY,
+	'title'            => 'LLL:EXT:' . $_EXTKEY . '/locallang.xml:tx_ter_updateCurrentVersionListTask.name',
+	'description'      => 'LLL:EXT:' . $_EXTKEY . '/locallang.xml:tx_ter_updateCurrentVersionListTask.description',
+	'additionalFields' => '',
+);
 ?>
