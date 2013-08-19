@@ -889,7 +889,7 @@ class tx_ter_api {
 			}
 			// clean newest core version
 			preg_match('/^(\d+)\.(\d+)\.(\d+)/', $newestCoreVersion, $matches);
-			$newestCoreVersion = $matches[1] . '.' . $matches[2] . '.99';
+			$newestCoreVersion = $matches[1] . '.' . $matches[2] . '.999';
 			// Compare currently supported core version with the dependency in the extension
 			$typo3Range = '';
 			if (is_array($extensionInfoData->technicalData->dependencies)) {
