@@ -900,10 +900,12 @@ class tx_ter_api {
 					}
 				}
 				list($lower, $upper) = t3lib_div::trimExplode('-', $typo3Range);
+				$lower = trim($lower);
+				$upper = trim($upper);
 				if (empty($lower) || empty($upper)) {
 					// Either part of the range is empty
 					$result = TX_TER_ERROR_UPLOADEXTENSION_TYPO3DEPENDENCYINCORRECT;
-				} else if (!preg_match('/\d+\.\d+\.\d+/', $lower) || !preg_match('/\d+\.\d+\.\d+/', $upper)) {
+				} else if (!preg_match('/^\d+\.\d+\.\d+$/', $lower) || !preg_match('/^\d+\.\d+\.\d+$/', $upper)) {
 					// Either part is not a full version number
 					$result = TX_TER_ERROR_UPLOADEXTENSION_TYPO3DEPENDENCYINCORRECT;
 				} else if (version_compare($lower, '0.0.0', '<=') || version_compare($upper, '0.0.0', '<=')) {
@@ -912,32 +914,11 @@ class tx_ter_api {
 				} else if (version_compare($upper, $newestCoreVersion, '>')) {
 					// Upper limit is larger than newest core version
 					$result = TX_TER_ERROR_UPLOADEXTENSION_TYPO3DEPENDENCYINCORRECT;
+				} else if (version_compare($lower, $upper, '>')) {
+					// Lower limit is higher than upper limit
+					$result = TX_TER_ERROR_UPLOADEXTENSION_TYPO3DEPENDENCYINCORRECT;
 				} else {
-					// Check if at least one maintained branch is within range
-					foreach ($supportedCoreVersions as $coreVersion) {
-						if (version_compare($coreVersion, $lower, '>=') && version_compare($coreVersion, $upper, '<=')) {
-							$result = TRUE;
-							break;
-						}
-					}
-					if ($result === TRUE) {
-						// Check if the upper or lower limit is an existing branch
-						$upperBranchExists = FALSE;
-						$lowerBranchExists = FALSE;
-						foreach ($currentCores as $version => $coreInfo) {
-							// Only use keys that represent a branch number
-							if (preg_match('/^\d+\.\d+$/', $version)) {
-								if (t3lib_div::isFirstPartOfStr($lower, $version . '.')) {
-									$lowerBranchExists = TRUE;
-								}
-								if (t3lib_div::isFirstPartOfStr($upper, $version . '.')) {
-									$upperBranchExists = TRUE;
-								}
-							}
-						}
-						$result = ($lowerBranchExists && $upperBranchExists) ? TRUE :
-							TX_TER_ERROR_UPLOADEXTENSION_TYPO3DEPENDENCYINCORRECT;
-					}
+					$result = TRUE;
 				}
 			}
 		}
