@@ -177,7 +177,7 @@ class tx_ter_api {
 		return array (
 			'resultCode' => TX_TER_RESULT_EXTENSIONSUCCESSFULLYUPLOADED,
 			'resultMessages' => array(
-				'Please note that it might take a while (up to one day) until your extension and the documentation appear on TYPO3.org.'
+				'Please note that it might take a while (up to an hour) until your extension and the documentation appear on TYPO3.org.'
 			),
 			'version' => $extensionInfoData->version,
 		);
