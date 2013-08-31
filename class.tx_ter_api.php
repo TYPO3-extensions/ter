@@ -160,7 +160,7 @@ class tx_ter_api {
 		if (($typo3DependencyCheck = $this->checkExtensionDependencyOnSupportedTypo3Version($extensionInfoData)) !== TRUE) {
 			switch ($typo3DependencyCheck) {
 				case TX_TER_ERROR_UPLOADEXTENSION_TYPO3DEPENDENCYINCORRECT:
-					$message = 'Extension does not have a dependency for a supported version of TYPO3';
+					$message = 'Extension does not have a dependency for a supported version of TYPO3. See http://typo3.org/news/article/announcing-ter-cleanup-process/ for how to fix this.';
 					break;
 				case TX_TER_ERROR_UPLOADEXTENSION_TYPO3DEPENDENCYCHECKFAILED:
 				default:
