@@ -732,8 +732,8 @@ class tx_ter_api {
 
 			// Get dependencies
 		$dependenciesArr = array();
-		if (is_array ($extensionInfoData->technicalData->constraints->depends)) {
-			foreach ($extensionInfoData->technicalData->constraints->depends as $dependency) {
+		if (is_array ($extensionInfoData->technicalData->dependencies)) {
+			foreach ($extensionInfoData->technicalData->dependencies as $dependency) {
 				$dependenciesArr[] = array(
 					'kind'         => $dependency->kind,
 					'extensionKey' => $dependency->extensionKey,
