@@ -154,7 +154,9 @@ class tx_ter_api {
 
 		$uploadUserRecordArr = $this->helperObj->getValidUser ($accountData);
 		$extensionKeyRecordArr = $this->helperObj->getExtensionKeyRecord ($extensionInfoData->extensionKey);
-		if ($extensionKeyRecordArr == FALSE) throw new tx_ter_exception_notFound ('Extension does not exist.', TX_TER_ERROR_UPLOADEXTENSION_EXTENSIONDOESNTEXIST);
+		if ($extensionKeyRecordArr == FALSE) {
+			throw new tx_ter_exception_notFound ('Extension does not exist.', TX_TER_ERROR_UPLOADEXTENSION_EXTENSIONDOESNTEXIST);
+		}
 		if (strtolower($extensionKeyRecordArr['ownerusername']) !== strtolower($accountData->username) && $uploadUserRecordArr['admin'] !== TRUE) throw new tx_ter_exception_unauthorized ('Access denied.', TX_TER_ERROR_UPLOADEXTENSION_ACCESSDENIED);
 
 		if (($typo3DependencyCheck = $this->checkExtensionDependencyOnSupportedTypo3Version($extensionInfoData)) !== TRUE) {
@@ -167,7 +169,7 @@ class tx_ter_api {
 					$message = 'Check on dependency for a supported version of TYPO3 failed due to technical reasons';
 					break;
 			}
-			throw new SoapFault($typo3DependencyCheck, $message);
+			throw new tx_ter_exception_failedDependency($message, $typo3DependencyCheck);
 		}
 
 		$this->uploadExtension_writeExtensionAndIconFile ($extensionInfoData, $filesData);

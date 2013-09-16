@@ -91,13 +91,40 @@ class tx_ter_pi1 extends tslib_pibase {
 				$statusCode = 401;
 			} elseif($e instanceof tx_ter_exception_notFound) {
 				$statusCode = 404;
+			}  elseif($e instanceof tx_ter_exception_failedDependency) {
+				$statusCode = 424;
 			}  elseif($e instanceof tx_ter_exception_internalServerError) {
 				$statusCode = 500;
 			}
 			header(' ', true, $statusCode);
-			// flush to prevent Soap to change the status code
-			flush();
-			$server->fault($e->getCode(), $e->getMessage());
+			/**
+			 * Using $server->fault will cause a http 500 status code to be sent which in turn
+			 * will trigger the web server's error page to be shown, instead of the SOAP XML
+			 * The header sent above will just be ignored.
+			 * Because of that, we forge a SOAP Fault XML ourselves and just echo it.
+			 *
+			 * flush() to prevent SoapServer to change the status code obviously also does not work
+			 * This fails when some other kind of output buffering is in place (e.g. for gzip compression)
+			 * in the web server.
+			 */
+			// flush to prevent Soap to change the status code (does not work)
+			// flush();
+			// $server->fault($e->getCode(), $e->getMessage());
+			$faultStringXmlTemplate = '<?xml version="1.0" encoding="UTF-8"?>
+<SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/">
+	<SOAP-ENV:Body>
+		<SOAP-ENV:Fault>
+			<faultcode>
+				%s
+			</faultcode>
+			<faultstring>
+				%s
+			</faultstring>
+		</SOAP-ENV:Fault>
+	</SOAP-ENV:Body>
+</SOAP-ENV:Envelope>';
+			echo sprintf($faultStringXmlTemplate, $e->getCode(), $e->getMessage());
+			exit;
 		}
 		return '';
 	}
