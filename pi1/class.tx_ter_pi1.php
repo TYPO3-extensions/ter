@@ -95,6 +95,7 @@ class tx_ter_pi1 extends tslib_pibase {
 				$statusCode = 424;
 			}  elseif($e instanceof tx_ter_exception_internalServerError) {
 				$statusCode = 500;
+				error_log(sprintf('TER Server internal error occurred. Error message is: "%s"', $e->getMessage()));
 			}
 			header(' ', true, $statusCode);
 			/**
