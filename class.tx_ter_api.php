@@ -218,10 +218,24 @@ class tx_ter_api {
 		if (strtolower($extensionKeyRecordArr['ownerusername']) !== strtolower($username)) {
 			throw new tx_ter_exception_unauthorized('Access denied.', TX_TER_ERROR_UPLOADEXTENSION_ACCESSDENIED);
 		}
+
+		if (($typo3DependencyCheck = self::checkExtensionDependencyOnSupportedTypo3Version($extensionInfoData)) !== TRUE) {
+			switch ($typo3DependencyCheck) {
+				case TX_TER_ERROR_UPLOADEXTENSION_TYPO3DEPENDENCYINCORRECT:
+					$message = 'Extension does not have a dependency for a supported version of TYPO3. See http://typo3.org/news/article/announcing-ter-cleanup-process/ for how to fix this.';
+					break;
+				case TX_TER_ERROR_UPLOADEXTENSION_TYPO3DEPENDENCYCHECKFAILED:
+				default:
+					$message = 'Check on dependency for a supported version of TYPO3 failed due to technical reasons';
+					break;
+			}
+			throw new tx_ter_exception($message, $typo3DependencyCheck);
+		}
 		// Upload...
 		$instance->uploadExtension_writeExtensionAndIconFile($extensionInfoData, $filesData);
 		$instance->uploadExtension_writeExtensionInfoToDB($accountData, $extensionInfoData, $filesData);
 		$instance->helperObj->requestUpdateOfExtensionIndexFile();
+
 		return TRUE;
 	}
 
@@ -736,11 +750,19 @@ class tx_ter_api {
 		$dependenciesArr = array();
 		if (is_array ($extensionInfoData->technicalData->dependencies)) {
 			foreach ($extensionInfoData->technicalData->dependencies as $dependency) {
-				$dependenciesArr[] = array(
-					'kind'         => $dependency->kind,
-					'extensionKey' => $dependency->extensionKey,
-					'versionRange' => $dependency->versionRange,
-				);
+				if (is_array($dependency)) {
+					$dependenciesArr[] = array(
+						'kind'         => $dependency['kind'],
+						'extensionKey' => $dependency['extensionKey'],
+						'versionRange' => $dependency['versionRange']
+					);
+				} else {
+					$dependenciesArr[] = array(
+						'kind'         => $dependency->kind,
+						'extensionKey' => $dependency->extensionKey,
+						'versionRange' => $dependency->versionRange
+					);
+				}
 			}
 		}
 
@@ -896,9 +918,16 @@ class tx_ter_api {
 			$typo3Range = '';
 			if (is_array($extensionInfoData->technicalData->dependencies)) {
 				foreach ($extensionInfoData->technicalData->dependencies as $dependency) {
-					if ($dependency->kind == 'depends' && $dependency->extensionKey == 'typo3') {
-						$typo3Range = $dependency->versionRange;
-						break;
+					if (is_object($dependency)) {
+						if ($dependency->kind == 'depends' && $dependency->extensionKey == 'typo3') {
+							$typo3Range = $dependency->versionRange;
+							break;
+						}
+					} else {
+						if ($dependency['kind'] == 'depends' && $dependency['extensionKey'] == 'typo3') {
+							$typo3Range = $dependency['versionRange'];
+							break;
+						}
 					}
 				}
 				list($lower, $upper) = t3lib_div::trimExplode('-', $typo3Range);
@@ -924,6 +953,7 @@ class tx_ter_api {
 				}
 			}
 		}
+
 		return $result;
 	}
 
