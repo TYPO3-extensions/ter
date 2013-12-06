@@ -115,12 +115,8 @@ class tx_ter_pi1 extends tslib_pibase {
 <SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/">
 	<SOAP-ENV:Body>
 		<SOAP-ENV:Fault>
-			<faultcode>
-				%s
-			</faultcode>
-			<faultstring>
-				%s
-			</faultstring>
+			<faultcode>%s</faultcode>
+			<faultstring>%s</faultstring>
 		</SOAP-ENV:Fault>
 	</SOAP-ENV:Body>
 </SOAP-ENV:Envelope>';
