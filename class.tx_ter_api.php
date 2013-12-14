@@ -144,6 +144,7 @@ class tx_ter_api {
 	 * @param	object		$extensionInfoData: The general extension information as received by the SOAP server
 	 * @param	array		$filesData: The array of file data objects as received by the SOAP server
 	 * @return	object		uploadExtensionResult object if upload was successful, otherwise an exception is thrown.
+	 * @throws tx_ter_exception
 	 * @access	public
 	 * @since	2.0.0
 	 */
@@ -157,7 +158,13 @@ class tx_ter_api {
 		if ($extensionKeyRecordArr == FALSE) {
 			throw new tx_ter_exception_notFound ('Extension does not exist.', TX_TER_ERROR_UPLOADEXTENSION_EXTENSIONDOESNTEXIST);
 		}
-		if (strtolower($extensionKeyRecordArr['ownerusername']) !== strtolower($accountData->username) && $uploadUserRecordArr['admin'] !== TRUE) throw new tx_ter_exception_unauthorized ('Access denied.', TX_TER_ERROR_UPLOADEXTENSION_ACCESSDENIED);
+		if (strtolower($extensionKeyRecordArr['ownerusername']) !== strtolower($accountData->username) && $uploadUserRecordArr['admin'] !== TRUE) {
+			throw new tx_ter_exception_unauthorized ('Access denied.', TX_TER_ERROR_UPLOADEXTENSION_ACCESSDENIED);
+		}
+
+		if ($this->checkUploadedExtensionVersionExistsInRepository($extensionInfoData)) {
+			throw new tx_ter_exception_versionExists('Version number ' . $extensionInfoData->version . ' already exists in repository.', TX_TER_ERROR_UPLOADEXTENSION_EXTENSIONVERSIONEXISTS);
+		}
 
 		if (($typo3DependencyCheck = $this->checkExtensionDependencyOnSupportedTypo3Version($extensionInfoData)) !== TRUE) {
 			switch ($typo3DependencyCheck) {
@@ -881,6 +888,22 @@ class tx_ter_api {
 		@unlink ($fullPath.$gifFileName);
 	}
 
+
+	/**
+	 * Checks if the version of the uploaded extension already exists in repository
+	 *
+	 * @param $extensionInfoData
+	 * @return mixed
+	 */
+	protected function checkUploadedExtensionVersionExistsInRepository($extensionInfoData) {
+		return $GLOBALS['TYPO3_DB']->sql_num_rows(
+			$GLOBALS['TYPO3_DB']->exec_SELECTquery(
+				'uid',
+				'tx_ter_extensions',
+				'extensionkey = "' . $extensionInfoData->extensionKey . '" AND version = "' . $extensionInfoData->version . '"'
+			)
+		);
+	}
 
 	/**
 	 * Checks if the extension has a dependency on one of the supported TYPO3 versions
