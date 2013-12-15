@@ -249,27 +249,29 @@ class tx_ter_api {
 	/**
 	 * Method for deleting an extension version from the repository
 	 *
-	 * @param	object		$accountData: Username and passwords for upload the extension (admin account required)
-	 * @param	string		$extensionKey: Extension key of the extension version to delete
-	 * @param	string		$version: Version string of the extension version to delete
-	 * @return	object		simpleResult object if extension could be deleted, otherwise an exception is thrown.
-	 * @access	public
-	 * @since	2.0.1
+	 * @param object $accountData: Username and passwords for upload the extension (admin account required)
+	 * @param string $extensionKey: Extension key of the extension version to delete
+	 * @param string $version: Version string of the extension version to delete
+	 * @return object simpleResult object if extension could be deleted, otherwise an exception is thrown.
+	 * @throws tx_ter_exception_unauthorized
+	 * @throws tx_ter_exception_notFound
+	 * @access public
+	 * @since 2.0.1
 	 */
-	public function deleteExtension ($accountData, $extensionKey, $version) {
+	public function deleteExtension($accountData, $extensionKey, $version) {
 		global $TSFE, $TYPO3_DB;
 
 		if (TYPO3_DLOG) t3lib_div::devLog('tx_ter_api->deleteExtension()', 'ter', 0, 'Deletion of extension '.$extensionKey.' ('.$version.') by user '.$accountData->username);
 
-		$userRecordArr = $this->helperObj->getValidUser ($accountData);
+		$userRecordArr = $this->helperObj->getValidUser($accountData);
 		if ($userRecordArr['admin'] !== TRUE) throw new tx_ter_exception_unauthorized ('Access denied. You must be administrator in order to delete extensions', TX_TER_ERROR_DELETEEXTENSION_ACCESS_DENIED);
-		$extensionKeyRecordArr = $this->helperObj->getExtensionKeyRecord ($extensionKey);
+		$extensionKeyRecordArr = $this->helperObj->getExtensionKeyRecord($extensionKey);
 		if ($extensionKeyRecordArr == FALSE) throw new tx_ter_exception_notFound ('Extension does not exist.', TX_TER_ERROR_DELETEEXTENSION_EXTENSIONDOESNTEXIST);
 
 		$this->deleteExtension_deleteFromDBAndRemoveFiles($extensionKey, $version);
 		$this->helperObj->requestUpdateOfExtensionIndexFile();
 
-		return array (
+		return array(
 			'resultCode' => TX_TER_RESULT_EXTENSIONSUCCESSFULLYDELETED,
 			'resultMessages' => array()
 		);
@@ -379,11 +381,13 @@ class tx_ter_api {
 	/**
 	 * Deletes an extension key. Only possible if no uploaded versions exist.
 	 *
-	 * @param	object		$accountData: A valid username and password
-	 * @param	string		$extensionKey: The extension key to delete
-	 * @return	object		simpleResponse-object. An exception is thrown if a fatal error ocurred.
-	 * @access	public
-	 * @since	2.0.0
+	 * @param object $accountData: A valid username and password
+	 * @param string $extensionKey: The extension key to delete
+	 * @return object simpleResponse-object. An exception is thrown if a fatal error ocurred.
+	 * @access public
+	 * @since 2.0.0
+	 * @throws tx_ter_exception_internalServerError
+	 * @throws tx_ter_exception_unauthorized
 	 */
 	public function deleteExtensionKey ($accountData, $extensionKey) {
 		global $TSFE, $TYPO3_DB;
@@ -429,11 +433,12 @@ class tx_ter_api {
 	/**
 	 * Modifies an extension key.
 	 *
-	 * @param	object		$accountData: A valid username and password
-	 * @param	object		$modifyExtensionKeyData: Fields which should be changed, "extensionKey" is mandatory.
-	 * @return	object		simpleResponse-object. An exception is thrown if a fatal error ocurred.
-	 * @access	public
-	 * @since	2.0.0
+	 * @param object $accountData: A valid username and password
+	 * @param object $modifyExtensionKeyData: Fields which should be changed, "extensionKey" is mandatory.
+	 * @return object simpleResponse-object. An exception is thrown if a fatal error ocurred.
+	 * @access public
+	 * @since 2.0.0
+	 * @throws tx_ter_exception_unauthorized
 	 */
 	public function modifyExtensionKey ($accountData, $modifyExtensionKeyData) {
 		global $TSFE, $TYPO3_DB;
@@ -570,26 +575,42 @@ class tx_ter_api {
 	 * writes the file to the repository's directory. By default this function creates
 	 * gzip compressed T3X files.
 	 *
-	 * After writing the extension, some files specififc data (like the filesize) is
+	 * After writing the extension, some files specific data (like the file size) is
 	 * added to $extensionInfoData for later informational use.
 	 *
-	 * @param	object		$extensionInfoData: The general extension information as received by the SOAP server
-	 * @param	object		$filesData: The array of file data objects as received by the SOAP server
-	 * @return	void
-	 * @access	protected
+	 * This function additionally extracts the preview images and the extension icon by calling
+	 * saveImages().
+	 *
+	 * @param object $extensionInfoData: The general extension information as received by the SOAP server
+	 * @param object $filesData: The array of file data objects as received by the SOAP server
+	 * @return void
+	 * @throws tx_ter_exception_internalServerError
+	 * @throws tx_ter_exception_notFound
+	 * @access protected
 	 */
-	public function uploadExtension_writeExtensionAndIconFile (&$extensionInfoData, $filesData) {
+	public function uploadExtension_writeExtensionAndIconFile(&$extensionInfoData, $filesData) {
 
-		if (!@is_dir ($this->parentObj->repositoryDir)) throw new tx_ter_exception_internalServerError ('Extension repository directory does not exist.', TX_TER_ERROR_GENERAL_EXTREPDIRDOESNTEXIST);
-		//t3lib_div::devLog($filesData->fileData,'filesData->fileData',0);
-		if (!is_array ($filesData->fileData)) throw new tx_ter_exception_notFound ('Extension contains no files.', TX_TER_ERROR_GENERAL_EXTENSIONCONTAINSNOFILES);
+		if (!@is_dir($this->parentObj->repositoryDir)) {
+			throw new tx_ter_exception_internalServerError(
+				'Extension repository directory does not exist.',
+				TX_TER_ERROR_GENERAL_EXTREPDIRDOESNTEXIST
+			);
+		}
+		if (!is_array($filesData->fileData)) {
+			throw new tx_ter_exception_notFound('Extension contains no files.', TX_TER_ERROR_GENERAL_EXTENSIONCONTAINSNOFILES);
+		}
 
 			// Prepare Files Data Array:
 		$preparedFilesDataArr = array();
 		foreach ($filesData->fileData as $fileData) {
 
-			$decodedContent = base64_decode ($fileData->content);
-			if ($fileData->contentMD5 != md5 ($decodedContent)) throw new tx_ter_exception_notFound ('MD5 does not match for file '.(string)$fileData->name, TX_TER_ERROR_UPLOADEXTENSION_FILEMD5DOESNOTMATCH);
+			$decodedContent = base64_decode($fileData->content);
+			if ($fileData->contentMD5 != md5($decodedContent)) {
+				throw new tx_ter_exception_notFound(
+					'MD5 does not match for file ' . (string)$fileData->name,
+					TX_TER_ERROR_UPLOADEXTENSION_FILEMD5DOESNOTMATCH
+				);
+			}
 
 			$preparedFilesDataArr[$fileData->name] = array (
 				'name' => $fileData->name,
@@ -597,7 +618,7 @@ class tx_ter_api {
 				'mtime' => $fileData->modificationTime,
 				'is_executable' => $fileData->isExecutable,
 				'content' => $decodedContent,
-				'content_md5' => md5 ($decodedContent)
+				'content_md5' => md5($decodedContent)
 			);
 		}
 
@@ -608,7 +629,7 @@ class tx_ter_api {
 		$dependenciesArr = array ();
 		$conflictsArr = array ();
 
-		if (is_array ($extensionInfoData->technicalData->dependencies)) {
+		if (is_array($extensionInfoData->technicalData->dependencies)) {
 			foreach ($extensionInfoData->technicalData->dependencies as $dependencyArr) {
 				switch ($dependencyArr->extensionKey) {
 					case 'typo3' :
@@ -634,8 +655,8 @@ class tx_ter_api {
 			'category' => $extensionInfoData->metaData->category,
 			'shy' => (is_string($extensionInfoData->technicalData->shy) ? ($extensionInfoData->technicalData->shy == 'false' ? 0 : 1) : (boolean)$extensionInfoData->technicalData->shy ? 1: 0),
 			'version' => $extensionInfoData->version,
-			'dependencies' => implode (',', $dependenciesArr),
-			'conflicts' => implode (',', $conflictsArr),
+			'dependencies' => implode(',', $dependenciesArr),
+			'conflicts' => implode(',', $conflictsArr),
 			'priority' => $extensionInfoData->technicalData->priority,
 			'loadOrder' => $extensionInfoData->technicalData->loadOrder,
 			'TYPO3_version' => $typo3Version,
@@ -652,11 +673,10 @@ class tx_ter_api {
 			'author_company' => $extensionInfoData->metaData->authorCompany,
 			'CGLcompliance' => $extensionInfoData->infoData->codingGuidelineCompliance,
 			'CGLcompliance_note' => $extensionInfoData->infoData->codeingGuidelineComplianceNote,
-			'version' => $extensionInfoData->version,
 		);
 
 			// Compile T3X Data Array:
-		$dataArr = array (
+		$dataArr = array(
 			'extKey' => $extensionInfoData->extensionKey,
 			'EM_CONF' => $preparedEMConfArr,
 			'misc' => array (),
@@ -664,15 +684,8 @@ class tx_ter_api {
 			'FILES' => $preparedFilesDataArr
 		);
 
-		$t3xFileUncompressedData = serialize ($dataArr);
-		$t3xFileData = md5 ($t3xFileUncompressedData) . ':gzcompress:'.gzcompress ($t3xFileUncompressedData);
-		if (isset($preparedFilesDataArr['ext_icon.png'])) {
-			$iconFileData = $preparedFilesDataArr['ext_icon.png']['content'];
-			$iconType = 'png';
-		} else {
-			$iconFileData = $preparedFilesDataArr['ext_icon.gif']['content'];
-			$iconType = 'gif';
-		}
+		$t3xFileUncompressedData = serialize($dataArr);
+		$t3xFileData = md5($t3xFileUncompressedData) . ':gzcompress:' . gzcompress($t3xFileUncompressedData);
 
 			// Check if size of t3x file is too big:
 		if (strlen ($t3xFileData) > $this->extensionMaxUploadSize) {
@@ -683,43 +696,33 @@ class tx_ter_api {
 		}
 
 			// Create directories and build filenames:
-		$firstLetter = strtolower (substr ($extensionInfoData->extensionKey, 0, 1));
-		$secondLetter = strtolower (substr ($extensionInfoData->extensionKey, 1, 1));
+		$firstLetter = strtolower(substr($extensionInfoData->extensionKey, 0, 1));
+		$secondLetter = strtolower(substr($extensionInfoData->extensionKey, 1, 1));
 		$fullPath = $this->parentObj->repositoryDir.$firstLetter.'/'.$secondLetter.'/';
 
-		if (@!is_dir ($this->parentObj->repositoryDir . $firstLetter)) {
-			mkdir ($this->parentObj->repositoryDir . $firstLetter);
+		if (@!is_dir($this->parentObj->repositoryDir . $firstLetter)) {
+			mkdir($this->parentObj->repositoryDir . $firstLetter);
 		}
-		if (@!is_dir ($this->parentObj->repositoryDir . $firstLetter . '/'. $secondLetter)) {
-			mkdir ($this->parentObj->repositoryDir . $firstLetter . '/' .$secondLetter);
+		if (@!is_dir($this->parentObj->repositoryDir . $firstLetter . '/'. $secondLetter)) {
+			mkdir($this->parentObj->repositoryDir . $firstLetter . '/' .$secondLetter);
 		}
 
-		list ($majorVersion, $minorVersion, $devVersion) = t3lib_div::intExplode ('.', $extensionInfoData->version);
+		list($majorVersion, $minorVersion, $devVersion) = t3lib_div::intExplode('.', $extensionInfoData->version);
 		$t3xFileName = strtolower($extensionInfoData->extensionKey) . '_' . $majorVersion . '.' . $minorVersion . '.' . $devVersion . '.t3x';
-		$iconFileName = strtolower($extensionInfoData->extensionKey) . '_' . $majorVersion . '.' . $minorVersion . '.' . $devVersion . '.' . $iconType;
 
 			// Write the files
-		$fh = @fopen ($fullPath.$t3xFileName, 'wb');
+		$fh = @fopen($fullPath.$t3xFileName, 'wb');
 		if (!$fh) {
 			throw new tx_ter_exception_internalServerError(
 				'Write error while writing .t3x file: ' . $fullPath . $t3xFileName,
 				TX_TER_ERROR_UPLOADEXTENSION_WRITEERRORWHILEWRITINGFILES
 			);
 		}
-		fwrite ($fh, $t3xFileData);
-		fclose ($fh);
+		fwrite($fh, $t3xFileData);
+		fclose($fh);
 
-		if (strlen($iconFileData)) {
-			$fh = @fopen($fullPath . $iconFileName, 'wb');
-			if (!$fh) {
-				throw new tx_ter_exception_internalServerError(
-					'Write error while writing icon file: ' . $fullPath . $iconFileName,
-					TX_TER_ERROR_UPLOADEXTENSION_WRITEERRORWHILEWRITINGFILES
-				);
-			}
-			fwrite($fh, $iconFileData);
-			fclose($fh);
-		}
+		$imageBaseName = strtolower($extensionInfoData->extensionKey) . '_' . $majorVersion . '.' . $minorVersion . '.' . $devVersion;
+		$this->saveImages($preparedFilesDataArr, $imageBaseName, $fullPath);
 
 			// Write some data back to $extensionInfoData:
 		$extensionInfoData->t3xFileMD5 = md5($t3xFileData);
@@ -869,50 +872,85 @@ class tx_ter_api {
 	 * Deletes an extension version from the database and its files from the repository directory.
 	 * After the deletion, the extension index is updated.
 	 *
-	 * @param	string		$extensionKey: The extension key
-	 * @param	string		$version: Version number of the extension to delete
-	 * @return	void
-	 * @access	protected
+	 * @param string $extensionKey: The extension key
+	 * @param string $version: Version number of the extension to delete
+	 * @return void
+	 * @throws tx_ter_exception_internalServerError
+	 * @access protected
 	 */
 	protected function deleteExtension_deleteFromDBAndRemoveFiles ($extensionKey, $version) {
+		/** @var $TYPO3_DB t3lib_DB */
 		global $TYPO3_DB;
 
-		if (!@is_dir ($this->parentObj->repositoryDir)) throw new tx_ter_exception_internalServerError ('Extension repository directory does not exist.', TX_TER_ERROR_GENERAL_EXTREPDIRDOESNTEXIST);
+		if (!@is_dir ($this->parentObj->repositoryDir)) {
+			throw new tx_ter_exception_internalServerError(
+				'Extension repository directory does not exist.',
+				TX_TER_ERROR_GENERAL_EXTREPDIRDOESNTEXIST
+			);
+		}
 
 		$result = $TYPO3_DB->exec_SELECTquery (
 			'uid',
 			'tx_ter_extensions',
-			'extensionkey="'.$TYPO3_DB->quoteStr($extensionKey, 'tx_ter_extensions').'" AND version="'.$TYPO3_DB->quoteStr($version, 'tx_ter_extensions').'" AND pid='.intval($this->parentObj->extensionsPID)
+			'extensionkey="' . $TYPO3_DB->quoteStr($extensionKey, 'tx_ter_extensions') .
+				'" AND version="' . $TYPO3_DB->quoteStr($version, 'tx_ter_extensions') .
+				'" AND pid=' . intval($this->parentObj->extensionsPID)
 		);
 		if (!$result) {
-			throw new tx_ter_exception_internalServerError ('Database error while selecting extension for deletion. (extensionkey: '.$extensionKey.' version: '.$version.')', TX_TER_ERROR_GENERAL_DATABASEERROR);
+			throw new tx_ter_exception_internalServerError(
+				'Database error while selecting extension for deletion. (extensionkey: ' . $extensionKey . ' version: ' . $version .')',
+				TX_TER_ERROR_GENERAL_DATABASEERROR
+			);
 		}
 		$extensionRow = $TYPO3_DB->sql_fetch_assoc($result);
 		if (!intval($extensionRow['uid'])) {
-			throw new tx_ter_exception_internalServerError ('deleteExtension_deleteFromDBAndRemoveFiles: Extension does not exist. (extensionkey: '.$extensionKey.' version: '.$version.')', TX_TER_ERROR_DELETEEXTENSION_EXTENSIONDOESNTEXIST);
+			throw new tx_ter_exception_internalServerError(
+				'deleteExtension_deleteFromDBAndRemoveFiles: Extension does not exist. (extensionkey: ' . $extensionKey . ' version: ' . $version . ')',
+				TX_TER_ERROR_DELETEEXTENSION_EXTENSIONDOESNTEXIST
+			);
 		}
 
 		$result = $TYPO3_DB->exec_DELETEquery (
 			'tx_ter_extensiondetails',
-			'extensionuid = '.intval($extensionRow['uid'])
+			'extensionuid = ' . intval($extensionRow['uid'])
 		);
+		if (!$result) {
+			throw new tx_ter_exception_internalServerError(
+				'Database error while deleting extension details for (extensionkey: ' . $extensionKey . ' uid: ' . $extensionRow['uid'] .')',
+				TX_TER_ERROR_GENERAL_DATABASEERROR
+			);
+		}
 		$result = $TYPO3_DB->exec_DELETEquery (
 			'tx_ter_extensions',
-			'extensionkey="'.$TYPO3_DB->quoteStr($extensionKey, 'tx_ter_extensions').'" AND version="'.$TYPO3_DB->quoteStr($version, 'tx_ter_extensions').'"'
+			'extensionkey="' . $TYPO3_DB->quoteStr($extensionKey, 'tx_ter_extensions') .
+				'" AND version="' . $TYPO3_DB->quoteStr($version, 'tx_ter_extensions') . '"'
 		);
+		if (!$result) {
+			throw new tx_ter_exception_internalServerError(
+				'Database error while deleting extension. (extensionkey: ' . $extensionKey . ' version: ' . $version .')',
+				TX_TER_ERROR_GENERAL_DATABASEERROR
+			);
+		}
 
 		$firstLetter = strtolower (substr ($extensionKey, 0, 1));
 		$secondLetter = strtolower (substr ($extensionKey, 1, 1));
-		$fullPath = $this->parentObj->repositoryDir.$firstLetter.'/'.$secondLetter.'/';
+		$fullPath = $this->parentObj->repositoryDir . $firstLetter . '/' . $secondLetter . '/';
 
-		list ($majorVersion, $minorVersion, $devVersion) = t3lib_div::intExplode ('.', $version);
-		$t3xFileName = strtolower ($extensionKey).'_'.$majorVersion.'.'.$minorVersion.'.'.$devVersion.'.t3x';
-		$gifFileName = strtolower ($extensionKey).'_'.$majorVersion.'.'.$minorVersion.'.'.$devVersion.'.gif';
-		$pngFileName = strtolower ($extensionKey).'_'.$majorVersion.'.'.$minorVersion.'.'.$devVersion.'.png';
+		list ($majorVersion, $minorVersion, $devVersion) = t3lib_div::intExplode('.', $version);
+		$fullPath .= strtolower($extensionKey) . '_' . $majorVersion . '.' . $minorVersion . '.' . $devVersion;
 
-		@unlink ($fullPath.$t3xFileName);
-		@unlink ($fullPath.$gifFileName);
-		@unlink ($fullPath.$pngFileName);
+		$filesToDelete = array(
+			'.t3x',
+			'.gif',
+			'.png',
+			'_Distribution.png',
+			'_DistributionWelcome.png',
+		);
+		foreach($filesToDelete as $file) {
+			if (file_exists($fullPath . $file)) {
+				@unlink($fullPath . $file);
+			}
+		}
 	}
 
 
@@ -1103,10 +1141,11 @@ class tx_ter_api {
 	/**
 	 * Writes modified extension key information into the database
 	 *
-	 * @param	object		$accountData: A valid username and password
-	 * @param	object		$modifyExtensionKeyData: The extension key field which shall be updated
-	 * @return	void
-	 * @access	protected
+	 * @param object $accountData: A valid username and password
+	 * @param object $modifyExtensionKeyData: The extension key field which shall be updated
+	 * @return integer the result TER result code
+	 * @throws tx_ter_exception_internalServerError
+	 * @access protected
 	 */
 	protected function modifyExtensionKey_writeModifiedKeyRecordIntoDB ($accountData, $modifyExtensionKeyData) {
 		global $TYPO3_DB, $TSFE;
@@ -1303,6 +1342,46 @@ class tx_ter_api {
 		$this->tce->workspace = 0;
 		$this->tce->bypassWorkspaceRestrictions = TRUE;
 		$this->tce->start(array(), array());
+	}
+
+	/**
+	 * Saves the images that are displayed in the TER listing and detail views
+	 *
+	 * @param array $preparedFilesDataArr The array with file names and contents
+	 * @param string $imageBaseName The prefix for each image, is also the name for the ext_icon file
+	 * @param string $fullPath The full path to the image folder
+	 * @return void
+	 * @throws tx_ter_exception_internalServerError
+	 */
+	protected function saveImages(&$preparedFilesDataArr, $imageBaseName, $fullPath) {
+		// Create a list of allowed images; resulting file names are given
+		// as values ($imageBaseName is prepended later on)
+		$potentialImagePaths = array();
+		// Extension icon (either PNG or GIF)
+		$potentialImagePaths['ext_icon' . '.png'] = '.png';
+		$potentialImagePaths['ext_icon' . '.gif'] = '.gif';
+		// Small preview image 220x150
+		$potentialImagePaths['Resources/Public/Images/Distribution.png'] = '_Distribution.png';
+		// Big welcome image 300x400
+		$potentialImagePaths['Resources/Public/Images/DistributionWelcome.png'] = '_DistributionWelcome.png';
+
+		$foundImages = array_intersect_key($preparedFilesDataArr, $potentialImagePaths);
+		foreach ($foundImages as $image) {
+			$imageName = $potentialImagePaths[$image['name']];
+			$imageData = $image['content'];
+			$imagePath = $imageBaseName . $imageName;
+			if (strlen($imageData)) {
+				$fh = @fopen($fullPath . $imagePath, 'wb');
+				if (!$fh) {
+					throw new tx_ter_exception_internalServerError(
+						'Write error while writing file: ' . $fullPath . $imagePath,
+						TX_TER_ERROR_UPLOADEXTENSION_WRITEERRORWHILEWRITINGFILES
+					);
+				}
+				fwrite($fh, $imageData);
+				fclose($fh);
+			}
+		}
 	}
 
 }
