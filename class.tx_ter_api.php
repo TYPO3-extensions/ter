@@ -666,40 +666,65 @@ class tx_ter_api {
 
 		$t3xFileUncompressedData = serialize ($dataArr);
 		$t3xFileData = md5 ($t3xFileUncompressedData) . ':gzcompress:'.gzcompress ($t3xFileUncompressedData);
-		$gifFileData = $preparedFilesDataArr['ext_icon.gif']['content'];
+		if (isset($preparedFilesDataArr['ext_icon.png'])) {
+			$iconFileData = $preparedFilesDataArr['ext_icon.png']['content'];
+			$iconType = 'png';
+		} else {
+			$iconFileData = $preparedFilesDataArr['ext_icon.gif']['content'];
+			$iconType = 'gif';
+		}
 
 			// Check if size of t3x file is too big:
-		if (strlen ($t3xFileData) > $this->extensionMaxUploadSize) throw new tx_ter_exception_notFound ('The extension size exceeded '.$this->extensionMaxUploadSize.' bytes which is the maximum for extension uploads.', TX_TER_ERROR_UPLOADEXTENSION_EXTENSIONTOOBIG);
+		if (strlen ($t3xFileData) > $this->extensionMaxUploadSize) {
+			throw new tx_ter_exception_notFound(
+				'The extension size exceeded ' . $this->extensionMaxUploadSize . ' bytes which is the maximum for extension uploads.',
+				TX_TER_ERROR_UPLOADEXTENSION_EXTENSIONTOOBIG
+			);
+		}
 
 			// Create directories and build filenames:
 		$firstLetter = strtolower (substr ($extensionInfoData->extensionKey, 0, 1));
 		$secondLetter = strtolower (substr ($extensionInfoData->extensionKey, 1, 1));
 		$fullPath = $this->parentObj->repositoryDir.$firstLetter.'/'.$secondLetter.'/';
 
-		if (@!is_dir ($this->parentObj->repositoryDir . $firstLetter)) mkdir ($this->parentObj->repositoryDir . $firstLetter);
-		if (@!is_dir ($this->parentObj->repositoryDir . $firstLetter . '/'. $secondLetter)) mkdir ($this->parentObj->repositoryDir . $firstLetter . '/' .$secondLetter);
+		if (@!is_dir ($this->parentObj->repositoryDir . $firstLetter)) {
+			mkdir ($this->parentObj->repositoryDir . $firstLetter);
+		}
+		if (@!is_dir ($this->parentObj->repositoryDir . $firstLetter . '/'. $secondLetter)) {
+			mkdir ($this->parentObj->repositoryDir . $firstLetter . '/' .$secondLetter);
+		}
 
 		list ($majorVersion, $minorVersion, $devVersion) = t3lib_div::intExplode ('.', $extensionInfoData->version);
-		$t3xFileName = strtolower ($extensionInfoData->extensionKey).'_'.$majorVersion.'.'.$minorVersion.'.'.$devVersion.'.t3x';
-		$gifFileName = strtolower ($extensionInfoData->extensionKey).'_'.$majorVersion.'.'.$minorVersion.'.'.$devVersion.'.gif';
+		$t3xFileName = strtolower($extensionInfoData->extensionKey) . '_' . $majorVersion . '.' . $minorVersion . '.' . $devVersion . '.t3x';
+		$iconFileName = strtolower($extensionInfoData->extensionKey) . '_' . $majorVersion . '.' . $minorVersion . '.' . $devVersion . '.' . $iconType;
 
 			// Write the files
 		$fh = @fopen ($fullPath.$t3xFileName, 'wb');
-		if (!$fh) throw new tx_ter_exception_internalServerError ('Write error while writing .t3x file: '.$fullPath.$t3xFileName, TX_TER_ERROR_UPLOADEXTENSION_WRITEERRORWHILEWRITINGFILES);
+		if (!$fh) {
+			throw new tx_ter_exception_internalServerError(
+				'Write error while writing .t3x file: ' . $fullPath . $t3xFileName,
+				TX_TER_ERROR_UPLOADEXTENSION_WRITEERRORWHILEWRITINGFILES
+			);
+		}
 		fwrite ($fh, $t3xFileData);
 		fclose ($fh);
 
-		if (strlen ($gifFileData)) {
-			$fh = @fopen ($fullPath.$gifFileName, 'wb');
-			if (!$fh) throw new tx_ter_exception_internalServerError ('Write error while writing .gif file: '.$fullPath.$gifFileName, TX_TER_ERROR_UPLOADEXTENSION_WRITEERRORWHILEWRITINGFILES);
-			fwrite ($fh, $gifFileData);
-			fclose ($fh);
+		if (strlen($iconFileData)) {
+			$fh = @fopen($fullPath . $iconFileName, 'wb');
+			if (!$fh) {
+				throw new tx_ter_exception_internalServerError(
+					'Write error while writing icon file: ' . $fullPath . $iconFileName,
+					TX_TER_ERROR_UPLOADEXTENSION_WRITEERRORWHILEWRITINGFILES
+				);
+			}
+			fwrite($fh, $iconFileData);
+			fclose($fh);
 		}
 
 			// Write some data back to $extensionInfoData:
-		$extensionInfoData->t3xFileMD5 = md5 ($t3xFileData);
-		$extensionInfoData->infoData->dataSize = strlen ($t3xFileUncompressedData);
-		$extensionInfoData->infoData->dataSizeCompressed = strlen ($t3xFileData);
+		$extensionInfoData->t3xFileMD5 = md5($t3xFileData);
+		$extensionInfoData->infoData->dataSize = strlen($t3xFileUncompressedData);
+		$extensionInfoData->infoData->dataSizeCompressed = strlen($t3xFileData);
 	}
 
 	/**
