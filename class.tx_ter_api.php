@@ -908,9 +908,11 @@ class tx_ter_api {
 		list ($majorVersion, $minorVersion, $devVersion) = t3lib_div::intExplode ('.', $version);
 		$t3xFileName = strtolower ($extensionKey).'_'.$majorVersion.'.'.$minorVersion.'.'.$devVersion.'.t3x';
 		$gifFileName = strtolower ($extensionKey).'_'.$majorVersion.'.'.$minorVersion.'.'.$devVersion.'.gif';
+		$pngFileName = strtolower ($extensionKey).'_'.$majorVersion.'.'.$minorVersion.'.'.$devVersion.'.png';
 
 		@unlink ($fullPath.$t3xFileName);
 		@unlink ($fullPath.$gifFileName);
+		@unlink ($fullPath.$pngFileName);
 	}
 
 
