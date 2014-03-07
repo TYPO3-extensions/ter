@@ -34,6 +34,7 @@ $EM_CONF[$_EXTKEY] = array(
 	'constraints' => array(
 		'depends' => array(
 			'saltedpasswords' => '',
+			'amqp' => '',
 		),
 		'conflicts' => array(
 		),

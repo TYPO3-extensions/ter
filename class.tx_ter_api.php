@@ -167,6 +167,8 @@ class tx_ter_api {
 		$this->uploadExtension_writeExtensionInfoToDB($accountData, $extensionInfoData, $filesData);
 		$this->helperObj->requestUpdateOfExtensionIndexFile();
 
+		static::notifyExtensionVersionUpload($extensionInfoData);
+
 		return array(
 			'resultCode' => TX_TER_RESULT_EXTENSIONSUCCESSFULLYUPLOADED,
 			'resultMessages' => array(
@@ -174,6 +176,27 @@ class tx_ter_api {
 			),
 			'version' => $extensionInfoData->version,
 		);
+	}
+
+	/**
+	 * notify message queue server of uploaded extension
+	 *
+	 * has to be static because uploadExtensionWithoutSoap() is static
+	 *
+	 * @param $extensionInfoData
+	 * @return void
+	 */
+	protected static function notifyExtensionVersionUpload($extensionInfoData) {
+		$objectManager = t3lib_div::makeInstance('Tx_Extbase_Object_ObjectManager');
+		/** @var Tx_Amqp_Service_ProducerService $producerService */
+		$producerService = $objectManager->get('Tx_Amqp_Service_ProducerService');
+
+		$data = array(
+			'extensionKey' => $extensionInfoData->extensionKey,
+			'version' => $extensionInfoData->version
+		);
+
+		$producerService->sendToExchange($data, 'org.typo3.ter.version.upload');
 	}
 
 	/**
@@ -232,6 +255,7 @@ class tx_ter_api {
 		$instance->uploadExtension_writeExtensionInfoToDB($accountData, $extensionInfoData, $filesData);
 		$instance->helperObj->requestUpdateOfExtensionIndexFile();
 
+		static::notifyExtensionVersionUpload($extensionInfoData);
 		return TRUE;
 	}
 
@@ -321,6 +345,7 @@ class tx_ter_api {
 				$this->registerExtensionKey_writeExtensionKeyInfoToDB($accountData, $registerExtensionKeyData);
 				$resultCode = TX_TER_RESULT_EXTENSIONKEYSUCCESSFULLYREGISTERED;
 			} else {
+				$this->notifyExtensionKeyRegistration($registerExtensionKeyData);
 				$resultCode = TX_TER_RESULT_EXTENSIONKEYALREADYEXISTS;
 			}
 		} else {
@@ -331,6 +356,24 @@ class tx_ter_api {
 			'resultCode' => $resultCode,
 			'resultMessages' => array(),
 		);
+	}
+
+	/**
+	 * notify message queue server of registered extension key
+	 *
+	 * @param $registerExtensionKeyData
+	 * @return mixed
+	 */
+	protected function notifyExtensionKeyRegistration($registerExtensionKeyData) {
+		$objectManager = t3lib_div::makeInstance('Tx_Extbase_Object_ObjectManager');
+		/** @var Tx_Amqp_Service_ProducerService $producerService */
+		$producerService = $objectManager->get('Tx_Amqp_Service_ProducerService');
+
+		$data = array(
+			'extensionKey' => $registerExtensionKeyData->extensionKey,
+		);
+
+		return $producerService->sendToExchange($data, 'org.typo3.ter.key.register');
 	}
 
 	/**
@@ -425,6 +468,7 @@ class tx_ter_api {
 					}
 
 					$resultCode = TX_TER_RESULT_GENERAL_OK;
+					$this->notifyExtensionKeyDelete($extensionKey);
 				}
 			} else {
 				throw new tx_ter_exception_internalServerError('Database error while fetching versions.', TX_TER_ERROR_GENERAL_DATABASEERROR);
@@ -437,6 +481,24 @@ class tx_ter_api {
 			'resultCode' => $resultCode,
 			'resultMessages' => array()
 		);
+	}
+
+	/**
+	 * notify message queue server of deleted extension key
+	 *
+	 * @param $extensionKey
+	 * @return mixed
+	 */
+	protected function notifyExtensionKeyDelete($extensionKey) {
+		$objectManager = t3lib_div::makeInstance('Tx_Extbase_Object_ObjectManager');
+		/** @var Tx_Amqp_Service_ProducerService $producerService */
+		$producerService = $objectManager->get('Tx_Amqp_Service_ProducerService');
+
+		$data = array(
+			'extensionKey' => $extensionKey,
+		);
+
+		$producerService->sendToExchange($data, 'org.typo3.ter.key.delete');
 	}
 
 	/**
