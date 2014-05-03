@@ -123,17 +123,18 @@ class tx_ter_api {
 	 * @since     2.0.0
 	 */
 	public function uploadExtension($accountData, $extensionInfoData, $filesData) {
+		$extensionKey = strtolower($extensionInfoData->extensionKey);
 		if (TYPO3_DLOG) {
 			t3lib_div::devLog(
 				'tx_ter_api->uploadExtension()',
 				'ter',
 				0,
-				'Upload of extension ' . $extensionInfoData->extensionKey . ' (' . $extensionInfoData->version . ') by user ' . $accountData->username
+				'Upload of extension ' . $extensionKey . ' (' . $extensionInfoData->version . ') by user ' . $accountData->username
 			);
 		}
 
 		$uploadUserRecordArr = $this->helperObj->getValidUser($accountData);
-		$extensionKeyRecordArr = $this->helperObj->getExtensionKeyRecord($extensionInfoData->extensionKey);
+		$extensionKeyRecordArr = $this->helperObj->getExtensionKeyRecord($extensionKey);
 		if ($extensionKeyRecordArr == FALSE) {
 			throw new tx_ter_exception_notFound('Extension does not exist.', TX_TER_ERROR_UPLOADEXTENSION_EXTENSIONDOESNTEXIST);
 		}
@@ -192,7 +193,7 @@ class tx_ter_api {
 		$instance = t3lib_div::makeInstance('tx_ter_api', $dummyParentObject);
 		$accountData = (object) array('username' => $username);
 		// Load extension
-		$extensionKeyRecordArr = $instance->helperObj->getExtensionKeyRecord($extensionInfoData->extensionKey);
+		$extensionKeyRecordArr = $instance->helperObj->getExtensionKeyRecord(strtolower($extensionInfoData->extensionKey));
 		if ($extensionKeyRecordArr == FALSE) {
 			throw new tx_ter_exception_notFound('Extension does not exist.', TX_TER_ERROR_UPLOADEXTENSION_EXTENSIONDOESNTEXIST);
 		}
@@ -627,6 +628,8 @@ class tx_ter_api {
 			);
 		}
 
+		$extensionKey = strtolower($extensionInfoData->extensionKey);
+
 		// Create an old-style list of dependencies, conflicts etc. which is understood by older
 		// versions of the Extension Manager:
 		$typo3Version = '';
@@ -682,7 +685,7 @@ class tx_ter_api {
 
 		// Compile T3X Data Array:
 		$dataArr = array(
-			'extKey' => $extensionInfoData->extensionKey,
+			'extKey' => $extensionKey,
 			'EM_CONF' => $preparedEMConfArr,
 			'misc' => array(),
 			'techInfo' => array(),
@@ -713,7 +716,7 @@ class tx_ter_api {
 		}
 
 		list($majorVersion, $minorVersion, $devVersion) = t3lib_div::intExplode('.', $extensionInfoData->version);
-		$t3xFileName = strtolower($extensionInfoData->extensionKey) . '_' . $majorVersion . '.' . $minorVersion . '.' . $devVersion . '.t3x';
+		$t3xFileName = $extensionKey . '_' . $majorVersion . '.' . $minorVersion . '.' . $devVersion . '.t3x';
 
 		// Write the files
 		$fh = @fopen($fullPath . $t3xFileName, 'wb');
@@ -726,7 +729,7 @@ class tx_ter_api {
 		fwrite($fh, $t3xFileData);
 		fclose($fh);
 
-		$imageBaseName = strtolower($extensionInfoData->extensionKey) . '_' . $majorVersion . '.' . $minorVersion . '.' . $devVersion;
+		$imageBaseName = $extensionKey . '_' . $majorVersion . '.' . $minorVersion . '.' . $devVersion;
 		$this->saveImages($preparedFilesDataArr, $imageBaseName, $fullPath);
 
 		// Write some data back to $extensionInfoData:
@@ -765,12 +768,14 @@ class tx_ter_api {
 			}
 		}
 
+		$extensionKey = strtolower($extensionInfoData->extensionKey);
+
 		// Prepare the new records
 		$extensionRow = array(
 			'tstamp' => $GLOBALS['SIM_EXEC_TIME'],
 			'crdate' => $GLOBALS['SIM_EXEC_TIME'],
 			'pid' => (int)$this->parentObj->extensionsPID,
-			'extensionkey' => $extensionInfoData->extensionKey,
+			'extensionkey' => $extensionKey,
 			'version' => $extensionInfoData->version,
 			'title' => $extensionInfoData->metaData->title,
 			'description' => $extensionInfoData->metaData->description,
@@ -783,7 +788,7 @@ class tx_ter_api {
 
 		// Update an existing or insert a new extension record
 		$table = 'tx_ter_extensions';
-		$where = 'extensionkey = "' . $GLOBALS['TYPO3_DB']->quoteStr($extensionInfoData->extensionKey, $table) . '"
+		$where = 'extensionkey = "' . $GLOBALS['TYPO3_DB']->quoteStr($extensionKey, $table) . '"
 				  AND version  = "' . $GLOBALS['TYPO3_DB']->quoteStr($extensionInfoData->version, $table) . '"';
 		$extensionUid = $this->updateOrInsertRecord($table, $extensionRow, $where);
 
@@ -858,7 +863,7 @@ class tx_ter_api {
 		$extensionQueue = array(
 			'pid' => (int) $this->parentObj->extensionsPID,
 			'extensionuid' => (int) $extensionUid,
-			'extensionkey' => $extensionInfoData->extensionKey,
+			'extensionkey' => $extensionKey,
 		);
 
 		$table = 'tx_ter_extensionqueue';
@@ -971,7 +976,7 @@ class tx_ter_api {
 			$GLOBALS['TYPO3_DB']->exec_SELECTquery(
 				'uid',
 				'tx_ter_extensions',
-				'extensionkey = "' . $extensionInfoData->extensionKey . '" AND version = "' . $extensionInfoData->version . '"'
+				'extensionkey = "' . strtolower($extensionInfoData->extensionKey) . '" AND version = "' . $extensionInfoData->version . '"'
 			)
 		);
 	}
