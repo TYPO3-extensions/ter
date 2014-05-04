@@ -132,6 +132,10 @@ class tx_ter_api {
 				'Upload of extension ' . $extensionKey . ' (' . $extensionInfoData->version . ') by user ' . $accountData->username
 			);
 		}
+		$extensionKeyCheckResult = $this->checkExtensionKey($accountData, $extensionInfoData->extensionKey);
+		if ($extensionKeyCheckResult['resultCode'] === TX_TER_RESULT_EXTENSIONKEYNOTVALID) {
+			throw new tx_ter_exception_invalidExtensionKey('Extension key is invalid.', TX_TER_RESULT_EXTENSIONKEYNOTVALID);
+		}
 
 		$uploadUserRecordArr = $this->helperObj->getValidUser($accountData);
 		$extensionKeyRecordArr = $this->helperObj->getExtensionKeyRecord($extensionKey);
@@ -178,6 +182,10 @@ class tx_ter_api {
 	 * @param string $username          Username for upload the extension
 	 * @param object $extensionInfoData The general extension information
 	 * @param array  $filesData         The array of file data objects
+	 * @throws tx_ter_exception_invalidExtensionKey
+	 * @throws tx_ter_exception_notFound
+	 * @throws tx_ter_exception_unauthorized
+	 * @throws tx_ter_exception
 	 *
 	 * @return boolean TRUE on success
 	 */
@@ -190,6 +198,11 @@ class tx_ter_api {
 			'repositoryDir' => $extConf['repositoryDir'],
 			'conf' => $GLOBALS['TSFE']->tmpl->setup['plugin.']['tx_ter_pi1.'],
 		);
+
+		if (!self::checkExtensionKey_extensionKeyIsFormallyValid($extensionInfoData->extensionKey)) {
+			throw new tx_ter_exception_invalidExtensionKey('Extension key is invalid.', TX_TER_RESULT_EXTENSIONKEYNOTVALID);
+		}
+
 		$instance = t3lib_div::makeInstance('tx_ter_api', $dummyParentObject);
 		$accountData = (object) array('username' => $username);
 		// Load extension
