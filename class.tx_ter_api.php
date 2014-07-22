@@ -1162,7 +1162,7 @@ class tx_ter_api {
 		}
 
 		// Length
-		$extensionKeyLength = strlen(str_replace('_', '', $extensionKey));
+		$extensionKeyLength = strlen($extensionKey);
 		if ($extensionKeyLength < 3 || $extensionKeyLength > 30) {
 			$validKey = FALSE;
 		}
