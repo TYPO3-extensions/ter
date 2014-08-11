@@ -16,6 +16,5 @@
 		'tx_ter_exception_versionexists' => $extensionPath . 'exception/class.tx_ter_exception_versionExists.php',
 		'tx_ter_exception_internalservererror' => $extensionPath . 'exception/class.tx_ter_exception_internalServerError.php',
 		'tx_ter_exception_notfound' => $extensionPath . 'exception/class.tx_ter_exception_notFound.php',
-		'tx_ter_exception_invalidextensionkey' => $extensionPath . 'exception/class.tx_ter_exception_invalidExtensionKey.php',
 	);
 ?>
