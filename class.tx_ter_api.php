@@ -1061,9 +1061,13 @@ class tx_ter_api {
 			$newestCoreVersion = '0.0.0';
 			foreach ($currentCores as $version => $coreInfo) {
 				// Only use keys that represent a branch number
-				if (preg_match('/^\d+\.\d+$/', $version)) {
+				if (preg_match('/^(\d+)\.\d+$/', $version, $matches)) {
 					if ($coreInfo['active'] === TRUE) {
-						$latestBranchVersion = $coreInfo['latest'];
+						if ((int)$matches[1] >= 7) {
+							$latestBranchVersion = $matches[1] . '.99.999';
+						} else {
+							$latestBranchVersion = $coreInfo['latest'];
+						}
 						if (!preg_match('/dev|alpha/', $latestBranchVersion)) {
 							$supportedCoreVersions[] = $latestBranchVersion;
 							if (version_compare($newestCoreVersion, $latestBranchVersion, '<')) {
