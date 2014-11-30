@@ -27,12 +27,36 @@ class tx_ter_updateCurrentVersionListTask extends tx_scheduler_Task {
 	 * @return boolean TRUE on success
 	 */
 	public function execute() {
+		$resultCoreData = $this->fetchCurrentCoreData();
+		$resultDocsData = $this->fetchCurrentDocumentationData();
+		return $resultCoreData && $resultDocsData;
+	}
+
+	/**
+	 * @return boolean
+	 */
+	protected function fetchCurrentCoreData() {
 		$result = FALSE;
 		$targetFile = PATH_site . $GLOBALS['TYPO3_CONF_VARS']['BE']['fileadminDir'] . 'currentcoredata.json';
 		$sourceData = t3lib_div::getUrl('http://get.typo3.org/json');
 		if (json_decode($sourceData, TRUE) !== NULL) {
 			$result = t3lib_div::writeFile($targetFile, $sourceData);
 		}
+
+		return $result;
+	}
+
+	/**
+	 * @return boolean
+	 */
+	protected function fetchCurrentDocumentationData() {
+		$result = FALSE;
+		$targetFile = PATH_site . $GLOBALS['TYPO3_CONF_VARS']['BE']['fileadminDir'] . 'currentdocumentationdata.json';
+		$sourceData = t3lib_div::getUrl('https://docs.typo3.org/typo3cms/extensions/manuals.json');
+		if (json_decode($sourceData, TRUE) !== NULL) {
+			$result = t3lib_div::writeFile($targetFile, $sourceData);
+		}
+
 		return $result;
 	}
 }
