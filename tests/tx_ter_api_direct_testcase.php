@@ -1,36 +1,26 @@
 <?php
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2005-2006 Elmar Hinz (elmar.hinz@team-red.net)
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 
 require_once (t3lib_extMgm::extPath('ter').'class.tx_ter_api.php');
 
 /**
- * Test case for checking the TER 2.0 API directly 
- * 
+ * Test case for checking the TER 2.0 API directly
+ *
  * @author	Elmar Hinz <elmar.hinz@team-red.net>
  */
 class tx_ter_api_direct_testcase extends tx_t3unit_testcase {
-	
+
 	var $user = 't3unit';
 	var $password = 't3unitpassword';
 	var $key = 'taken_x_y_z';
@@ -44,7 +34,7 @@ class tx_ter_api_direct_testcase extends tx_t3unit_testcase {
 	var $account;
 	var $api;
 	var $tearDown = true;
-	
+
 	/**
 	 * Setup test environment
 	 *
@@ -58,60 +48,60 @@ class tx_ter_api_direct_testcase extends tx_t3unit_testcase {
 	 */
 	protected function setUp() {
 		global $TYPO3_DB, $TSFE;
-		
+
 		$keysAndValues = array(
 			'pid' => $this->pid,
 			'username' => $this->user,
 			'password' => $this->password
 		);
 		$TYPO3_DB->exec_INSERTquery ('fe_users', $keysAndValues);
-		
+
 		$keysAndValues = array(
 			'pid' => $this->pid,
 			'extensionkey' => $this->key
 		);
 		$TYPO3_DB->exec_INSERTquery ('tx_ter_extensionkeys', $keysAndValues);
-		
+
 		    // Create a sys_page for TSFE
 		if(!is_object($TSFE->sys_page)) {
 			require_once (PATH_t3lib.'class.t3lib_page.php');
 			$TSFE->sys_page = t3lib_div::makeInstance('t3lib_pageSelect');
 			$TSFE->sys_page->init(true);
 		}
-		
+
 		    // Create dummy Account
 		$this->account = (object) 'dummyAccount';
 		$this->account->username = $this->user;
 		$this->account->password = $this->password;
-		
+
 		    // Create a dummy cObj
 		$cObject = (object) 'dummyCObj';
-		
+
 		    // Create a dummy parent
 		$pObject = (object) 'dummyParent';
 		$pObject->cObject = $cObject;
 		$pObject->extensionsPID = $this->pid;
-		
+
 			// Create api class
 		$class = t3lib_div::makeInstanceClassName('tx_ter_api');
 		$this->api = new $class($pObject);
 	}
-	
+
 	/**
 	 * Cleanup
-	 *  
+	 *
 	 * Delete test extension keys from database
 	 * Delete test fe_user from database
 	 */
 	protected function tearDown() {
 		global $TYPO3_DB;
-		
+
 	    if($this->tearDown) {
 			$TYPO3_DB->exec_DELETEquery('tx_ter_extensionkeys', 'pid='.intval($this->pid));
 			$TYPO3_DB->exec_DELETEquery('fe_users', 'pid='.intval($this->pid));
 	    }
 	}
-	
+
 	/**
 	 * Test function for method checkExtensionKey
 	 * @return void
@@ -130,7 +120,7 @@ class tx_ter_api_direct_testcase extends tx_t3unit_testcase {
 		$resArray = $this->api->checkExtensionKey($this->account, $this->takenKey2);
 		self::assertEquals((int)$resArray['resultCode'], (int)TX_TER_RESULT_EXTENSIONKEYALREADYEXISTS);
 	}
-	
+
 	/**
 	 * Test function for method registerExtensionKey
 	 * @return void
@@ -156,8 +146,6 @@ class tx_ter_api_direct_testcase extends tx_t3unit_testcase {
 		$resArray = $this->api->registerExtensionKey($this->account, $keyData);
 		self::assertEquals((int)$resArray['resultCode'], (int)TX_TER_RESULT_EXTENSIONKEYALREADYEXISTS);
 	}
-	
-	
-}
 
-?>
+
+}

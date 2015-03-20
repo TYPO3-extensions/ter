@@ -1,48 +1,37 @@
 <?php
-/***************************************************************
-*  Copyright notice
-*
-*  (c) 2005-2006 Robert Lemke (robert@typo3.org)
-*  All rights reserved
-*
-*  This script is part of the TYPO3 project. The TYPO3 project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
-*
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*
-*  This script is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
-*
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+/**
+ * This file is part of the TYPO3 CMS project.
+ *
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
+ *
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
+ *
+ * The TYPO3 project - inspiring people to share!
+ */
 
 /**
  * Test case for checking the TER 2.0 API via SOAP.
  *
- * Notes: 
- *    
+ * Notes:
+ *
  *    - Most of the tests assume that there exists a FE user "t3unit"
  *      with password "t3unitpassword". Some also require a user "t3unit-2"
  *      with password "t3unitpassword".
- * 
+ *
  *    - The extension key "nothing" must be owned by user "t3unit"
- * 
+ *
  *    - Although the tx_ter_api takes the PID of extension keys and
  *      extensions into account, these tests don't. Just make sure that
  *      only one repository exists in your site database.
- * 
- * 	  - The script tx_ter_wsdl.php must be accsible via 
+ *
+ * 	  - The script tx_ter_wsdl.php must be accsible via
  *      TYPO3_SITE_URL/wsdl/tx_ter_wsdl.php
  *
  * @author	Robert Lemke <robert@typo3.org>
  */
-
 
 class tx_ter_soap_testcase extends tx_t3unit_testcase {
 
@@ -73,7 +62,7 @@ class tx_ter_soap_testcase extends tx_t3unit_testcase {
 		try {
 			$result = $soapClientObj->__call ('ping', array ('dummy'));
 		} catch (SOAPFault $exception) {
-			debug ($exception);			
+			debug ($exception);
 		}
 		self::assertEquals ($result, 'pongdummy', 'Basic SOAP server ping check without using WSDL definition failed.');
 	}
@@ -87,7 +76,7 @@ class tx_ter_soap_testcase extends tx_t3unit_testcase {
 		}
 
 		try {
-			$result = $soapClientObj->ping ('dummy');			
+			$result = $soapClientObj->ping ('dummy');
 			self::assertEquals ($result, 'pongdummy', 'Basic SOAP server ping check WITH using WSDL definition failed.');
 		} catch (SOAPFault $exception) {
 			self::fail ('Basic SOAP server ping check WITH using the WSDL definition ('.$this->WSDLURI.') throwed an exception: '.$exception->faultstring);
@@ -103,20 +92,20 @@ class tx_ter_soap_testcase extends tx_t3unit_testcase {
 	 *
 	 * EXTENSION UPLOAD TESTS
 	 *
-	 * The following tests check the upload function of the 
-	 * TER API. We use a serialized array as a fixture which 
-	 * originally was created by the Extension Manager for 
+	 * The following tests check the upload function of the
+	 * TER API. We use a serialized array as a fixture which
+	 * originally was created by the Extension Manager for
 	 * TER < 2.0.
 	 *
-	 * Note: This test requires a valid FE user "t3unit" with 
-	 *       password "t3unitpassword" being the owner of the 
+	 * Note: This test requires a valid FE user "t3unit" with
+	 *       password "t3unitpassword" being the owner of the
 	 *       extension "nothing"
 	 *
 	 *********************************************************/
 
 	public function test_uploadExtension_withValidData() {
 		global $TYPO3_DB;
-		
+
 		$this->createFixture_uploadExtension (&$accountData, &$extensionData, &$filesData);
 		$soapClientObj = new SoapClient ($this->WSDLURI, array ('trace' => 1, 'exceptions' => 1));
 
@@ -130,9 +119,9 @@ class tx_ter_soap_testcase extends tx_t3unit_testcase {
 		} catch (SoapFault $exception) {
 			self::fail ('SoapFault Exception (#'.$exception->faultcode.'): '.$exception->faultstring);
 		}
-	
+
 		self::assertTrue (is_array ($result) && ($result['resultCode'] == 10504), 'Upload of extension was not successful (result: '.$result['resultCode'].')');
-		
+
 			// --- CHECK THE DATABASE DIRECTLY IF UPLOAD WAS STORED CORRECTLY -----------------------------------
 		$res = $TYPO3_DB->exec_SELECTquery (
 			'uid,version,title,description,state,category,ismanualincluded',
@@ -146,13 +135,13 @@ class tx_ter_soap_testcase extends tx_t3unit_testcase {
 			$extensionsRow['description'] == $extensionData['metaData']['description'] &&
 			$extensionsRow['state'] == $extensionData['metaData']['state'] &&
 			$extensionsRow['category'] == $extensionData['metaData']['category'] &&
-			$extensionsRow['ismanualincluded'] == $extensionData['technicalData']['isManualIncluded'] 
+			$extensionsRow['ismanualincluded'] == $extensionData['technicalData']['isManualIncluded']
 		);
-		
+
 		self::assertTrue ($extensionsRowCheck, 'Row of table "tx_ter_extensions" does not contain the uploaded extension data!');
 
 		$res = $TYPO3_DB->exec_SELECTquery (
-			'*',			
+			'*',
 			'tx_ter_extensiondetails',
 			'extensionuid='.$extensionsRow['uid']
 		);
@@ -190,7 +179,7 @@ class tx_ter_soap_testcase extends tx_t3unit_testcase {
 	public function test_uploadExtension_withoutUserPassword() {
 		$this->createFixture_uploadExtension (&$accountData, &$extensionData, &$filesData);
 		$soapClientObj = new SoapClient ($this->WSDLURI, array ('trace' => 1, 'exceptions' => 1));
-		
+
 			// --- TEST AN EXTENSION UPLOAD WITHOUT ANY USERNAME, PASSWORD AND UPLOAD PASSWORD ---------------
 		try {
 			$result = $soapClientObj->uploadExtension (
@@ -215,7 +204,7 @@ class tx_ter_soap_testcase extends tx_t3unit_testcase {
 	public function test_uploadExtension_withWrongUserPassword() {
 		$this->createFixture_uploadExtension (&$accountData, &$extensionData, &$filesData);
 		$soapClientObj = new SoapClient ($this->WSDLURI, array ('trace' => 1, 'exceptions' => 1));
-		
+
 			// --- TEST AN EXTENSION UPLOAD WITH WRONG USERNAME AND PASSWORD ---------------
 		try {
 			$result = $soapClientObj->uploadExtension (
@@ -240,7 +229,7 @@ class tx_ter_soap_testcase extends tx_t3unit_testcase {
 	public function test_uploadExtension_withWrongUser() {
 		$this->createFixture_uploadExtension (&$accountData, &$extensionData, &$filesData);
 		$soapClientObj = new SoapClient ($this->WSDLURI, array ('trace' => 1, 'exceptions' => 1));
-		
+
 			// TEST AN EXTENSION UPLOAD WITH VALID USERNAME AND PASSWORD BUT A USER WHICH IS NOT THE OWNER OF THE EXTENSION
 		try {
 			$result = $soapClientObj->uploadExtension (
@@ -264,10 +253,10 @@ class tx_ter_soap_testcase extends tx_t3unit_testcase {
 	 *
 	 * CHECK EXTENSION KEY TESTS
 	 *
-	 * The following tests check the function for checking 
+	 * The following tests check the function for checking
 	 * extensions keys at the TER API.
 	 *
-	 * Note: This test requires a valid FE user "t3unit" with 
+	 * Note: This test requires a valid FE user "t3unit" with
 	 *       password "t3unitpassword"
 	 *
 	 *********************************************************/
@@ -280,16 +269,16 @@ class tx_ter_soap_testcase extends tx_t3unit_testcase {
 		$accountData = array(
 			'username' => 't3unit',
 			'password' => 't3unitpassword'
-		);			
+		);
 		try {
 			$result = $soapClientObj->checkExtensionKey ($accountData, 'templavoila');
 		} catch (SoapFault $exception) {
 			self::fail ('SoapFault Exception (#'.$exception->faultcode.'): '.$exception->faultstring);
 		}
-		
+
 		self::assertTrue (is_array ($result) && ($result['resultCode'] == 10500), 'Extension key "templavoila" does not exist (or an error ocurred) although it should (result: '.$result['resultCode'].')');
 	}
-	
+
 	public function test_checkExtensionKey_nonExistingKeyAndValidAccount () {
 
 		$soapClientObj = new SoapClient ($this->WSDLURI, array ('trace' => 1, 'exceptions' => 1));
@@ -298,14 +287,14 @@ class tx_ter_soap_testcase extends tx_t3unit_testcase {
 		$accountData = array(
 			'username' => 't3unit',
 			'password' => 't3unitpassword'
-		);			
+		);
 		$extensionKey = 'ter_testcase_nonexisting';
 		try {
 			$result = $soapClientObj->checkExtensionKey ($accountData, $extensionKey);
 		} catch (SoapFault $exception) {
 			self::fail ('SoapFault Exception (#'.$exception->faultcode.'): '.$exception->faultstring);
 		}
-		
+
 		self::assertTrue (is_array ($result) && ($result['resultCode'] == 10501), 'Non existing extension key did not result in the correct result code (result: '.$result['resultCode'].', key: '.$extensionKey.')');
 	}
 
@@ -317,25 +306,25 @@ class tx_ter_soap_testcase extends tx_t3unit_testcase {
 		$accountData = array(
 			'username' => 't3unit',
 			'password' => 't3unitpassword'
-		);			
+		);
 
 			// Invalid prefixes: tx,u,user_,pages,tt_,sys_,ts_language_,csh_
 			// Allowed characters: a-z (lowercase), 0-9 and '_' (underscore)
-			// Extension keys cannot start or end with 0-9 and '_' (underscore)			
+			// Extension keys cannot start or end with 0-9 and '_' (underscore)
 			// Minimum 3, maximum 30 characters
 
-		$invalidKeys = array ('user_test', 'tx_test', 'u_test', 'pages_test', 'tt_tertest', 'sys_tertest', 'ts_language_tertest', 'csh_tertesttest', 'test_öhm', 'abc23--test', 'a12345678901234567890123456789012345', '123test', 'tertest_', '_tertest', 'a_b'); 
-		foreach ($invalidKeys as $extensionKey) {	
+		$invalidKeys = array ('user_test', 'tx_test', 'u_test', 'pages_test', 'tt_tertest', 'sys_tertest', 'ts_language_tertest', 'csh_tertesttest', 'test_öhm', 'abc23--test', 'a12345678901234567890123456789012345', '123test', 'tertest_', '_tertest', 'a_b');
+		foreach ($invalidKeys as $extensionKey) {
 			try {
 				$result = $soapClientObj->checkExtensionKey ($accountData, $extensionKey);
 			} catch (SoapFault $exception) {
 				self::fail ('SoapFault Exception (#'.$exception->faultcode.'): '.$exception->faultstring);
 			}
-			
-			self::assertTrue (is_array ($result) && ($result['resultCode'] == 10502), 'Extension key "'.$extensionKey.'" is not valid, but no error was returned! (result: '.$result['resultCode'].')');	
+
+			self::assertTrue (is_array ($result) && ($result['resultCode'] == 10502), 'Extension key "'.$extensionKey.'" is not valid, but no error was returned! (result: '.$result['resultCode'].')');
 		}
 	}
-	
+
 	public function test_checkExtensionKey_existingKeyAndInvalidAccount () {
 
 		$soapClientObj = new SoapClient ($this->WSDLURI, array ('trace' => 1, 'exceptions' => 1));
@@ -344,13 +333,13 @@ class tx_ter_soap_testcase extends tx_t3unit_testcase {
 		$accountData = array(
 			'username' => 'invalidaccount',
 			'password' => 'invalidpassword'
-		);			
+		);
 		try {
 			$result = $soapClientObj->checkExtensionKey ($accountData, 'templavoila');
 			self::fail ('Checking extension key with wrong account data should throw an exception but it didn\'t!');
 		} catch (SoapFault $exception) {
 		}
-		
+
 	}
 
 
@@ -362,10 +351,10 @@ class tx_ter_soap_testcase extends tx_t3unit_testcase {
 	 *
 	 * REGISTER EXTENSION KEY TESTS
 	 *
-	 * The following tests check the function for registering 
+	 * The following tests check the function for registering
 	 * new extensions at the TER API.
 	 *
-	 * Note: This test requires a valid FE user "t3unit" with 
+	 * Note: This test requires a valid FE user "t3unit" with
 	 *       password "t3unitpassword"
 	 *
 	 *********************************************************/
@@ -378,7 +367,7 @@ class tx_ter_soap_testcase extends tx_t3unit_testcase {
 			'tx_ter_extensionkeys',
 			'extensionkey="ter_testcase_testkey"'
 		);
-			
+
 
 		$soapClientObj = new SoapClient ($this->WSDLURI, array ('trace' => 1, 'exceptions' => 1));
 
@@ -397,9 +386,9 @@ class tx_ter_soap_testcase extends tx_t3unit_testcase {
 		} catch (SoapFault $exception) {
 			self::fail ('SoapFault Exception (#'.$exception->faultcode.'): '.$exception->faultstring);
 		}
-		
+
 		self::assertTrue (is_array ($result) && ($result['resultCode'] == 10503), 'Registration of valid extension key was not successful (result: '.$result['resultCode'].')');
-		
+
 			// --- CHECK THE DATABASE DIRECTLY IF EXTENSION KEY WAS STORED CORRECTLY -----------------------------------
 		$res = $TYPO3_DB->exec_SELECTquery (
 			'uid,pid,extensionkey,title,description,ownerusername,maxstoresize,downloadcounter',
@@ -419,10 +408,10 @@ class tx_ter_soap_testcase extends tx_t3unit_testcase {
 			'tx_ter_extensionkeys',
 			'extensionkey="'.$extensionKeyData['extensionKey'].'"'
 		);
-		
+
 		self::assertTrue ($extensionKeysRowCheck, 'Row of table "tx_ter_extensionkeys" does not contain the uploaded extension key data!');
 
-		
+
 	}
 
 
@@ -433,13 +422,13 @@ class tx_ter_soap_testcase extends tx_t3unit_testcase {
 	 *
 	 * GET EXTENSION KEY TESTS
 	 *
-	 * The following tests check the function for fetching 
+	 * The following tests check the function for fetching
 	 * extensions keys from the TER API.
 	 *
-	 * Note: This test requires a valid FE user "t3unit" with 
+	 * Note: This test requires a valid FE user "t3unit" with
 	 *       password "t3unitpassword". It further assumes that
 	 *       there are extension keys registered by the user
-	 *       "kasper" 
+	 *       "kasper"
 	 *
 	 *********************************************************/
 
@@ -451,17 +440,17 @@ class tx_ter_soap_testcase extends tx_t3unit_testcase {
 		$accountData = array(
 			'username' => 't3unit',
 			'password' => 't3unitpassword'
-		);			
+		);
 		$filterOptions = array (
 			'username' => 'kasper'
 		);
-		
+
 		try {
 			$resultArr = $soapClientObj->getExtensionKeys ($accountData, $filterOptions);
 		} catch (SoapFault $exception) {
 			self::fail ('SoapFault Exception (#'.$exception->faultcode.'): '.$exception->faultstring);
 		}
-		
+
 		self::assertTrue (is_array ($resultArr) && ($resultArr['simpleResult']['resultCode'] == 10000), 'Fetching extension keys did not return the expected result (result: '.$result['simpleResult']['resultCode'].')');
 	}
 
@@ -473,12 +462,12 @@ class tx_ter_soap_testcase extends tx_t3unit_testcase {
 	 *
 	 * DELETE EXTENSION KEY TESTS
 	 *
-	 * The following tests check the function for deleting 
+	 * The following tests check the function for deleting
 	 * extensions keys from the TER API.
 	 *
-	 * Note: This test requires a valid FE user "t3unit" with 
+	 * Note: This test requires a valid FE user "t3unit" with
 	 *       password "t3unitpassword" and a second account
-	 *       "t3unit-2" with the same password. 
+	 *       "t3unit-2" with the same password.
 	 *
 	 *********************************************************/
 
@@ -502,15 +491,15 @@ class tx_ter_soap_testcase extends tx_t3unit_testcase {
 		} catch (SoapFault $exception) {
 			self::fail ('SoapFault Exception (#'.$exception->faultcode.'): '.$exception->faultstring);
 		}
-		
+
 		self::assertTrue (is_array ($resultArr) && ($resultArr['resultCode'] == 10503), 'Registration of valid extension key was not successful (result: '.$resultArr['resultCode'].')');
 
 			// --- DELETE THE CREATED KEY WITH INVALID ACCOUNT DATA ----------------------------------------------
 		$accountData = array(
 			'username' => 't3unit-2',
 			'password' => 't3unitpassword'
-		);			
-		
+		);
+
 		try {
 			$resultArr = $soapClientObj->deleteExtensionKey($accountData, 'ter_testcase_testkey');
 			self::fail ('No exception thrown while trying to delete an extension key with user account not having the right to!');
@@ -524,14 +513,14 @@ class tx_ter_soap_testcase extends tx_t3unit_testcase {
 		$accountData = array(
 			'username' => 't3unit',
 			'password' => 't3unitpassword'
-		);			
-		
+		);
+
 		try {
 			$resultArr = $soapClientObj->deleteExtensionKey($accountData, 'ter_testcase_testkey');
 		} catch (SoapFault $exception) {
 			self::fail ('SoapFault Exception (#'.$exception->faultcode.'): '.$exception->faultstring);
 		}
-		
+
 		self::assertTrue (is_array ($resultArr) && ($resultArr['resultCode'] == 10000), 'Deleting extension key did not return the expected result (result: '.$resultArr['resultCode'].')');
 
 			// --- CHECK THE DATABASE DIRECTLY IF EXTENSION KEY WAS REALLY DELETED -----------------------------
@@ -541,7 +530,7 @@ class tx_ter_soap_testcase extends tx_t3unit_testcase {
 			'extensionkey="ter_testcase_testkey"'
 		);
 		if (!$res) self::fail ('No MySQL result while checking if extension key was correctly inserted into the DB');
-		
+
 		self::assertTrue ($TYPO3_DB->sql_num_rows($res) == 0, 'The deleted extension key still exists!');
 	}
 
@@ -553,12 +542,12 @@ class tx_ter_soap_testcase extends tx_t3unit_testcase {
 	 *
 	 * MODIFY EXTENSION KEY TESTS
 	 *
-	 * The following tests check the function for modifying 
+	 * The following tests check the function for modifying
 	 * extensions keys by the TER API.
 	 *
-	 * Note: This test requires a valid FE user "t3unit" with 
+	 * Note: This test requires a valid FE user "t3unit" with
 	 *       password "t3unitpassword" and a second account
-	 *       "t3unit-2" with the same password. 
+	 *       "t3unit-2" with the same password.
 	 *
 	 *********************************************************/
 
@@ -582,20 +571,20 @@ class tx_ter_soap_testcase extends tx_t3unit_testcase {
 		} catch (SoapFault $exception) {
 			self::fail ('SoapFault Exception (#'.$exception->faultcode.'): '.$exception->faultstring);
 		}
-		
+
 		self::assertTrue (is_array ($resultArr) && ($resultArr['resultCode'] == 10503), 'Registration of valid extension key was not successful (result: '.$resultArr['resultCode'].')');
 
 			// --- MODIFY THE OWNER OF CREATED KEY WITH INVALID ACCOUNT DATA ---------------------------
 		$accountData = array(
 			'username' => 't3unit-2',
 			'password' => 't3unitpassword'
-		);			
-		
+		);
+
 		$extensionKeyData = array (
 			'extensionKey' => 'ter_testcase_testkey',
 			'ownerUsername' => 't3unit-2'
 		);
-		
+
 		try {
 			$resultArr = $soapClientObj->modifyExtensionKey($accountData, $extensionKeyData);
 			self::fail ('No exception thrown while trying to modify an extension key with user account not having the right to!');
@@ -635,7 +624,7 @@ class tx_ter_soap_testcase extends tx_t3unit_testcase {
 		} catch (SoapFault $exception) {
 			self::fail ('SoapFault Exception (#'.$exception->faultcode.'): '.$exception->faultstring);
 		}
-		
+
 		self::assertTrue (is_array ($resultArr) && ($resultArr['resultCode'] == 10000), 'Setting extension key owner did not return the expected result (result: '.$resultArr['resultCode'].')');
 
 
@@ -646,7 +635,7 @@ class tx_ter_soap_testcase extends tx_t3unit_testcase {
 			'extensionkey="ter_testcase_testkey"'
 		);
 		if (!$res) self::fail ('No MySQL result while checking if extension key was correctly inserted into the DB');
-		
+
 		$extensionKeysRow = $TYPO3_DB->sql_fetch_assoc ($res);
 		$extensionKeysRowCheck = $extensionKeysRow['ownerusername'] == 't3unit-2';
 
@@ -654,7 +643,7 @@ class tx_ter_soap_testcase extends tx_t3unit_testcase {
 			'tx_ter_extensionkeys',
 			'extensionkey="ter_testcase_testkey"'
 		);
-		
+
 		self::assertTrue ($extensionKeysRowCheck, 'Row of table "tx_ter_extensionkeys" did not contain the modified extension key data!');
 	}
 
@@ -666,14 +655,14 @@ class tx_ter_soap_testcase extends tx_t3unit_testcase {
 	 *
 	 * SET REVIEW STATE TESTS
 	 *
-	 * The following tests check the function for setting the 
+	 * The following tests check the function for setting the
 	 * review state of an extensions.
 	 *
-	 * Note: This test requires a valid FE user "t3unit" with 
+	 * Note: This test requires a valid FE user "t3unit" with
 	 *       password "t3unitpassword" and a second account
 	 *       "t3unit-2" with the same password.
-	 *       The second account must be in a group which has 
-	 *       the right to set review states, the first one 
+	 *       The second account must be in a group which has
+	 *       the right to set review states, the first one
 	 *       mustn't!
 	 *
 	 *********************************************************/
@@ -695,7 +684,7 @@ class tx_ter_soap_testcase extends tx_t3unit_testcase {
 			);
 		} catch (SoapFault $exception) {
 			self::fail ('SoapFault Exception (#'.$exception->faultcode.'): '.$exception->faultstring);
-		}	
+		}
 		self::assertTrue (is_array ($result) && ($result['resultCode'] == 10504), 'Upload of extension was not successful (result: '.$result['resultCode'].')');
 
 			// Now try to set the review state (must result in "access denied"):
@@ -703,19 +692,19 @@ class tx_ter_soap_testcase extends tx_t3unit_testcase {
 			'username' => 't3unit',
 			'password' => 't3unitpassword'
 		);
-		
+
 		$setReviewStateData = array (
 			'extensionKey' => $extensionData['extensionKey'],
 			'version' => $result['version'],
 			'reviewState' => 1
 		);
-		
+
 		try {
 			$resultArr = $soapClientObj->setReviewState ($accountData, $setReviewStateData);
 			self::fail ('Setting review state should throw an exception but it didn\'t!');
 		} catch (SoapFault $exception) {
 		}
-		
+
 		self::assertTrue ($exception->faultcode == 701, 'Setting review state with invalid user did throw an exception but with the wrong fault code ('.$exception->faultcode.' '.$exception->faultstring.')');
 
 			// Try again with user who belongs to the reviewers usergroup but with a non-existing extension:
@@ -723,13 +712,13 @@ class tx_ter_soap_testcase extends tx_t3unit_testcase {
 			'username' => 't3unit-2',
 			'password' => 't3unitpassword'
 		);
-		
+
 		$setReviewStateData = array (
 			'extensionKey' => '_thisextensionsurelydoesntexist',
 			'version' => '1.0.0',
 			'reviewState' => 1
 		);
-		
+
 		try {
 			$resultArr = $soapClientObj->setReviewState ($accountData, $setReviewStateData);
 			self::fail ('Setting review state should throw an exception but it didn\'t!');
@@ -743,13 +732,13 @@ class tx_ter_soap_testcase extends tx_t3unit_testcase {
 			'username' => 't3unit-2',
 			'password' => 't3unitpassword'
 		);
-		
+
 		$setReviewStateData = array (
 			'extensionKey' => $extensionData['extensionKey'],
 			'version' => $result['version'],
 			'reviewState' => 1
 		);
-		
+
 		try {
 			$resultArr = $soapClientObj->setReviewState ($accountData, $setReviewStateData);
 		} catch (SoapFault $exception) {
@@ -757,7 +746,7 @@ class tx_ter_soap_testcase extends tx_t3unit_testcase {
 		}
 
 		self::assertTrue (is_array ($resultArr) && ($resultArr['resultCode'] == 10000), 'Setting review state was not successful (result: '.$resultArr['resultCode'].')');
-		
+
 			// Check if the state really has been changed in the database:
 
 		$res = $TYPO3_DB->exec_SELECTquery (
@@ -767,11 +756,11 @@ class tx_ter_soap_testcase extends tx_t3unit_testcase {
 				'version ="'.$TYPO3_DB->quoteStr($result['version'], 'tx_ter_extensions').'"'
 		);
 		if (!$res) self::fail ('No MySQL result while checking if extension review state was correctly modified in the DB');
-		
+
 		$row = $TYPO3_DB->sql_fetch_assoc ($res);
-		
+
 		self::assertEquals((integer)$row['reviewstate'], 1, 'The review state found in the database record is not like expected!');
-		
+
 	}
 
 
@@ -782,14 +771,14 @@ class tx_ter_soap_testcase extends tx_t3unit_testcase {
 	 *
 	 * INCREASE EXTENSION DOWNLOAD COUNTER TESTS
 	 *
-	 * The following tests check the function for increasing  
+	 * The following tests check the function for increasing
 	 * the download counter of an extension version.
 	 *
-	 * Note: This test requires a valid FE user "t3unit" with 
+	 * Note: This test requires a valid FE user "t3unit" with
 	 *       password "t3unitpassword" and a second account
 	 *       "t3unit-2" with the same password.
-	 *       The second account must be in a group which has 
-	 *       the right to increase download counters, the first 
+	 *       The second account must be in a group which has
+	 *       the right to increase download counters, the first
 	 *       one mustn't!
 	 *
 	 *********************************************************/
@@ -811,9 +800,9 @@ class tx_ter_soap_testcase extends tx_t3unit_testcase {
 			);
 		} catch (SoapFault $exception) {
 			self::fail ('SoapFault Exception (#'.$exception->faultcode.'): '.$exception->faultstring);
-		}	
+		}
 		self::assertTrue (is_array ($result) && ($result['resultCode'] == 10504), 'Upload of extension was not successful (result: '.$result['resultCode'].')');
-	
+
 		$extensionVersionsAndIncrementors = array (
 			'extensionVersionAndIncrementor' => array(
 				array (
@@ -828,7 +817,7 @@ class tx_ter_soap_testcase extends tx_t3unit_testcase {
 #				)
 			)
 		);
-				
+
 			// Save the total downloads counter of the extension key:
 		$res = $TYPO3_DB->exec_SELECTquery (
 			'downloadcounter',
@@ -854,13 +843,13 @@ class tx_ter_soap_testcase extends tx_t3unit_testcase {
 			'username' => 't3unit',
 			'password' => 't3unitpassword'
 		);
-		
+
 		try {
 			$resultArr = $soapClientObj->increaseExtensionDownloadCounters ($accountData, $extensionVersionsAndIncrementors);
 			self::fail ('increasing the extension download counter should throw an exception but it didn\'t!');
 		} catch (SoapFault $exception) {
 		}
-		
+
 		self::assertTrue ($exception->faultcode == 801, 'increasing download counters with invalid user did throw an exception but with the wrong fault code ('.$exception->faultcode.' '.$exception->faultstring.')');
 
 			// Try again (twice) with user who belongs to the correct usergroup:
@@ -868,7 +857,7 @@ class tx_ter_soap_testcase extends tx_t3unit_testcase {
 			'username' => 't3unit-2',
 			'password' => 't3unitpassword'
 		);
-		
+
 		try {
 			$resultArr = $soapClientObj->increaseExtensionDownloadCounters ($accountData, $extensionVersionsAndIncrementors);
 			$extensionVersionsAndIncrementors['extensionVersionAndIncrementor'][0]['downloadCountIncrementor'] = 15;
@@ -888,7 +877,7 @@ class tx_ter_soap_testcase extends tx_t3unit_testcase {
 		}
 
 		self::assertTrue (is_array ($resultArr) && ($resultArr['resultCode'] == 10000), 'increasing download counters was not successful (result: '.$resultArr['resultCode'].')');
-		
+
 			// Check if the counter really has been changed in the database:
 		$res = $TYPO3_DB->exec_SELECTquery (
 			'downloadcounter',
@@ -897,9 +886,9 @@ class tx_ter_soap_testcase extends tx_t3unit_testcase {
 				'version ="'.$TYPO3_DB->quoteStr($extensionVersionsAndIncrementors['extensionVersionAndIncrementor'][0]['version'], 'tx_ter_extensions').'"'
 		);
 		if (!$res) self::fail ('No MySQL result while checking if extension download counter was correctly increased in the DB');
-		
+
 		$row = $TYPO3_DB->sql_fetch_assoc ($res);
-		
+
 		self::assertEquals((integer)$row['downloadcounter'], ($versionCounter+20), 'The download counter found in the database record is not like expected!');
 
 		$res = $TYPO3_DB->exec_SELECTquery (
@@ -908,9 +897,9 @@ class tx_ter_soap_testcase extends tx_t3unit_testcase {
 			'extensionkey ="'.$TYPO3_DB->quoteStr($extensionVersionsAndIncrementors['extensionVersionAndIncrementor'][0]['extensionKey'], 'tx_ter_extensions').'"'
 		);
 		if (!$res) self::fail ('No MySQL result while checking if extension download counter was correctly increased in the DB');
-		
+
 		$row = $TYPO3_DB->sql_fetch_assoc ($res);
-		
+
 		self::assertEquals((integer)$row['downloadcounter'], ($totalCounter+20), 'The total downloads counter found in the database record is not like expected!');
 	}
 
@@ -934,7 +923,7 @@ class tx_ter_soap_testcase extends tx_t3unit_testcase {
 		$dataArr = unserialize (file_get_contents(t3lib_extMgm::extPath('ter').'tests/fixtures/fixture_extuploaddataarray_zipped.dat'));
 		$dataBlobArr = unserialize (gzuncompress($dataArr['datablob']));
 		$specialCharacters = file_get_contents(t3lib_extMgm::extPath('ter').'tests/fixtures/special_characters_utf8.txt');
-		
+
 		$accountData = array (
 			'username' => 't3unit',
 			'password' => 't3unitpassword',
@@ -974,7 +963,7 @@ class tx_ter_soap_testcase extends tx_t3unit_testcase {
 				'shy' => 1,
 				'modules' => '',
 				'modifyTables' => 'tt_content',
-				'priority' => 0,				
+				'priority' => 0,
 				'clearCacheOnLoad' => 1,
 				'lockType' => 'L',
 				'isManualIncluded' => 1,
@@ -1005,5 +994,3 @@ class tx_ter_soap_testcase extends tx_t3unit_testcase {
 	}
 
 }
-
-?>
