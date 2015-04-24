@@ -142,6 +142,11 @@ class tx_ter_api {
 			throw new tx_ter_exception_unauthorized('Access denied.', TX_TER_ERROR_UPLOADEXTENSION_ACCESSDENIED);
 		}
 
+		// check for a valid version number
+		if (preg_match('/^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$/', $extensionInfoData->version) == FALSE) {
+			throw new tx_ter_exception('Your version number "' . htmlspecialchars($extensionInfoData->version) . '" is invalid. Allowed are three numbers with maximum 999, e.g. "7.8.999".', 1429912029);
+		}
+
 		if ($this->checkUploadedExtensionVersionExistsInRepository($extensionInfoData)) {
 			throw new tx_ter_exception_versionExists('Version number ' . $extensionInfoData->version . ' already exists in repository.', TX_TER_ERROR_UPLOADEXTENSION_EXTENSIONVERSIONEXISTS);
 		}
@@ -222,6 +227,11 @@ class tx_ter_api {
 		}
 		if (strtolower($extensionKeyRecordArr['ownerusername']) !== strtolower($username)) {
 			throw new tx_ter_exception_unauthorized('Access denied.', TX_TER_ERROR_UPLOADEXTENSION_ACCESSDENIED);
+		}
+
+		// check for a valid version number
+		if (preg_match('/^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$/', $extensionInfoData->version) == FALSE) {
+			throw new tx_ter_exception('Your version number "' . htmlspecialchars($extensionInfoData->version) . '" is invalid. Allowed are three numbers with maximum 999, e.g. "7.8.999".', 1429912029);
 		}
 
 		if (($typo3DependencyCheck = self::checkExtensionDependencyOnSupportedTypo3Version($extensionInfoData)) !== TRUE) {
