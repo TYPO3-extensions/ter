@@ -1070,19 +1070,18 @@ class tx_ter_api {
 			$supportedCoreVersions = array();
 			$newestCoreVersion = '0.0.0';
 			foreach ($currentCores as $version => $coreInfo) {
-				// Only use keys that represent a branch number
-				if (preg_match('/^(\d+)\.\d+$/', $version, $matches)) {
-					if ($coreInfo['active'] === TRUE) {
-						if ((int)$matches[1] >= 7) {
-							$latestBranchVersion = $matches[1] . '.99.999';
-						} else {
-							$latestBranchVersion = $coreInfo['latest'];
-						}
-						if (!preg_match('/dev|alpha/', $latestBranchVersion)) {
-							$supportedCoreVersions[] = $latestBranchVersion;
-							if (version_compare($newestCoreVersion, $latestBranchVersion, '<')) {
-								$newestCoreVersion = $latestBranchVersion;
-							}
+				if ($coreInfo['active'] === TRUE) {
+					// Only use keys that represent a branch number
+					if (strpos($version, '.') && preg_match('/^(\d+)\.\d+$/', $version, $matches)) {
+						$latestBranchVersion = $coreInfo['latest'];
+					} else {
+						// Manage core version without branch (>= 7 LTS)
+						$latestBranchVersion = $version . '.99.999';
+					}
+					if (!preg_match('/dev|alpha/', $latestBranchVersion)) {
+						$supportedCoreVersions[] = $latestBranchVersion;
+						if (version_compare($newestCoreVersion, $latestBranchVersion, '<')) {
+							$newestCoreVersion = $latestBranchVersion;
 						}
 					}
 				}
