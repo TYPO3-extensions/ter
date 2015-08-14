@@ -697,28 +697,12 @@ class tx_ter_api {
 		}
 
 		$extensionKey = strtolower($extensionInfoData->extensionKey);
-
-		// Create an old-style list of dependencies, conflicts etc. which is understood by older
-		// versions of the Extension Manager:
-		$typo3Version = '';
-		$phpVersion = '';
-		$dependenciesArr = array();
-		$conflictsArr = array();
+		$constraints = array();
 
 		if (is_array($extensionInfoData->technicalData->dependencies)) {
-			foreach ($extensionInfoData->technicalData->dependencies as $dependencyArr) {
-				switch ($dependencyArr->extensionKey) {
-					case 'typo3':
-					case 'php':
-						$dependenciesArr[$dependencyArr->extensionKey] = $dependencyArr->versionRange;
-						break;
-					default:
-						if ($dependencyArr->kind == 'requires') {
-							$dependenciesArr[$dependencyArr->extensionKey] = $dependencyArr->versionRange;
-						} elseif ($dependencyArr->kind == 'conflicts') {
-							$conflictsArr[$dependencyArr->extensionKey] = $dependencyArr->versionRange;
-						}
-				}
+			foreach ($extensionInfoData->technicalData->dependencies as $dependency) {
+				$dependency = json_decode(json_encode($dependency), TRUE);
+				$constraints[$dependency['kind']][$dependency['extensionKey']] = $dependency['versionRange'];
 			}
 		}
 
@@ -743,11 +727,7 @@ class tx_ter_api {
 			'author_company' => $extensionInfoData->metaData->authorCompany,
 			'CGLcompliance' => $extensionInfoData->infoData->codingGuidelineCompliance,
 			'CGLcompliance_note' => $extensionInfoData->infoData->codeingGuidelineComplianceNote,
-			'constraints' => array(
-				'depends' => $dependenciesArr,
-				'conflicts' => $conflictsArr,
-				'suggests' => array()
-			)
+			'constraints' => $constraints
 		);
 
 		// Compile T3X Data Array:
@@ -1491,5 +1471,4 @@ class tx_ter_api {
 			}
 		}
 	}
-
 }
