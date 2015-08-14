@@ -136,7 +136,7 @@ class tx_ter_helper {
 		$res = $TYPO3_DB->exec_SELECTquery(
 			'*',
 			'fe_users',
-			'username="'.$TYPO3_DB->quoteStr($accountData->username, 'fe_users').'"'.$TSFE->sys_page->enableFields('fe_users')
+			'username=' . $TYPO3_DB->fullQuoteStr($accountData->username, 'fe_users') . $TSFE->sys_page->enableFields('fe_users')
 		);
 
 		if ($row = $TYPO3_DB->sql_fetch_assoc($res)) {
@@ -170,7 +170,7 @@ class tx_ter_helper {
 			$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
 				'*',
 				'fe_users',
-				'username="' . $GLOBALS['TYPO3_DB']->quoteStr($accountData->username, 'fe_users') . '"' . $GLOBALS['TSFE']->sys_page->enableFields('fe_users')
+				'username=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($accountData->username, 'fe_users') . $GLOBALS['TSFE']->sys_page->enableFields('fe_users')
 			);
 
 			if ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res)) {
@@ -198,7 +198,7 @@ class tx_ter_helper {
  * @author  Elmar Hinz
  */
     public function extensionKeyIsAvailable($extensionKey) {
-        global $TSFE, $TYPO3_DB;
+        global $TYPO3_DB;
 
 		$cleanedExtensionKey = str_replace('_', '', $extensionKey);
 		$isAvailable = TRUE;
@@ -229,7 +229,7 @@ class tx_ter_helper {
 		$res = $TYPO3_DB->exec_SELECTquery(
 			'*',
 			'tx_ter_extensionkeys',
-			'extensionkey="'.$TYPO3_DB->quoteStr($extKey, 'tx_ter_extensionkeys').'"
+			'extensionkey=' . $TYPO3_DB->fullQuoteStr($extKey, 'tx_ter_extensionkeys') . '
 				AND pid='.intval($this->pluginObj->extensionsPID).
 				$TSFE->sys_page->enableFields('tx_ter_extensionkeys')
 		);
@@ -251,13 +251,13 @@ class tx_ter_helper {
 	 * @access	public
 	 */
 	public function getLatestVersionNumberOfExtension ($extensionKey) {
-		global $TYPO3_DB, $TSFE;
+		global $TYPO3_DB;
 
 		$res = $TYPO3_DB->exec_SELECTquery (
 			'version',
 			'tx_ter_extensions',
-			'extensionkey="'.$TYPO3_DB->quoteStr($extensionKey, 'tx_ter_extensions').'"
-				AND pid='.intval($this->pluginObj->extensionsPID)
+			'extensionkey=' . $TYPO3_DB->fullQuoteStr($extensionKey, 'tx_ter_extensions') . '
+				AND pid=' . intval($this->pluginObj->extensionsPID)
 		);
 		$latestVersion = FALSE;
 		while ($row = $TYPO3_DB->sql_fetch_assoc($res)) {
@@ -315,7 +315,7 @@ class tx_ter_helper {
 			$res2 = $TYPO3_DB->exec_SELECTquery(
 				'ownerusername,downloadcounter',
 				'tx_ter_extensionkeys',
-				'extensionkey="'.$row['extensionkey'].'"'
+				'extensionkey=' . $TYPO3_DB->fullQuoteStr($row['extensionkey'], 'tx_ter_extensionkeys')
 			);
 			$extensionKeyRow = $TYPO3_DB->sql_fetch_assoc($res2);
 			$row['ownerusername'] = $extensionKeyRow['ownerusername'];
@@ -324,7 +324,7 @@ class tx_ter_helper {
 			$res2 = $TYPO3_DB->exec_SELECTquery(
 				'lastuploaddate,uploadcomment,dependencies,authorname,authoremail,authorcompany',
 				'tx_ter_extensiondetails',
-				'extensionuid='.$row['uid']
+				'extensionuid=' . (int)$row['uid']
 			);
 			$detailsRow = $TYPO3_DB->sql_fetch_assoc($res2);
 			if (is_array ($detailsRow)) {

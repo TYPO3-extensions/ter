@@ -379,16 +379,16 @@ class tx_ter_api {
 
 		$whereClause = 'pid=' . (int) $this->parentObj->extensionsPID;
 		if (!empty($extensionKeyFilterOptions->username)) {
-			$whereClause .= ' AND ownerusername = "' . $GLOBALS['TYPO3_DB']->quoteStr($extensionKeyFilterOptions->username, 'tx_ter_extensionkeys') . '"';
+			$whereClause .= ' AND ownerusername = ' . $GLOBALS['TYPO3_DB']->fullQuoteStr($extensionKeyFilterOptions->username, 'tx_ter_extensionkeys');
 		}
 		if (!empty($extensionKeyFilterOptions->title)) {
-			$whereClause .= ' AND title = "' . $GLOBALS['TYPO3_DB']->quoteStr($extensionKeyFilterOptions->title, 'tx_ter_extensionkeys') . '"';
+			$whereClause .= ' AND title = ' . $GLOBALS['TYPO3_DB']->fullQuoteStr($extensionKeyFilterOptions->title, 'tx_ter_extensionkeys');
 		}
 		if (!empty($extensionKeyFilterOptions->description)) {
-			$whereClause .= ' AND description = "' . $GLOBALS['TYPO3_DB']->quoteStr($extensionKeyFilterOptions->description, 'tx_ter_extensionkeys') . '"';
+			$whereClause .= ' AND description = ' . $GLOBALS['TYPO3_DB']->fullQuoteStr($extensionKeyFilterOptions->description, 'tx_ter_extensionkeys');
 		}
 		if (!empty($extensionKeyFilterOptions->extensionKey)) {
-			$whereClause .= ' AND extensionkey = "' . $GLOBALS['TYPO3_DB']->quoteStr($extensionKeyFilterOptions->extensionKey, 'tx_ter_extensionkeys') . '"';
+			$whereClause .= ' AND extensionkey = ' . $GLOBALS['TYPO3_DB']->fullQuoteStr($extensionKeyFilterOptions->extensionKey, 'tx_ter_extensionkeys');
 		}
 
 		$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
@@ -439,7 +439,7 @@ class tx_ter_api {
 			$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
 				'extensionkey',
 				'tx_ter_extensions',
-				'extensionkey="' . $GLOBALS['TYPO3_DB']->quoteStr($extensionKey, 'tx_ter_extensions') . '" AND pid=' . (int) $this->parentObj->extensionsPID
+				'extensionkey=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($extensionKey, 'tx_ter_extensions') . ' AND pid=' . (int)$this->parentObj->extensionsPID
 			);
 
 			if ($res) {
@@ -448,7 +448,7 @@ class tx_ter_api {
 				} else {
 					$res = $GLOBALS['TYPO3_DB']->exec_DELETEquery(
 						'tx_ter_extensionkeys',
-						'extensionkey="' . $GLOBALS['TYPO3_DB']->quoteStr($extensionKey, 'tx_ter_extensions') . '" AND pid=' . (int) $this->parentObj->extensionsPID
+						'extensionkey=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($extensionKey, 'tx_ter_extensions') . ' AND pid=' . (int)$this->parentObj->extensionsPID
 					);
 					if (!$res) {
 						throw new tx_ter_exception_internalServerError('Database error while deleting extension key.', TX_TER_ERROR_GENERAL_DATABASEERROR);
@@ -850,8 +850,8 @@ class tx_ter_api {
 
 		// Update an existing or insert a new extension record
 		$table = 'tx_ter_extensions';
-		$where = 'extensionkey = "' . $GLOBALS['TYPO3_DB']->quoteStr($extensionKey, $table) . '"
-				  AND version  = "' . $GLOBALS['TYPO3_DB']->quoteStr($extensionInfoData->version, $table) . '"';
+		$where = 'extensionkey = ' . $GLOBALS['TYPO3_DB']->fullQuoteStr($extensionKey, $table) . '
+				  AND version  = ' . $GLOBALS['TYPO3_DB']->fullQuoteStr($extensionInfoData->version, $table);
 		$extensionUid = $this->updateOrInsertRecord($table, $extensionRow, $where);
 
 		// Get dependencies
@@ -964,9 +964,9 @@ class tx_ter_api {
 		$result = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
 			'uid',
 			'tx_ter_extensions',
-			'extensionkey="' . $GLOBALS['TYPO3_DB']->quoteStr($extensionKey, 'tx_ter_extensions') .
-			'" AND version="' . $GLOBALS['TYPO3_DB']->quoteStr($version, 'tx_ter_extensions') .
-			'" AND pid=' . (int) $this->parentObj->extensionsPID
+			'extensionkey=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($extensionKey, 'tx_ter_extensions') .
+			' AND version=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($version, 'tx_ter_extensions') .
+			' AND pid=' . (int)$this->parentObj->extensionsPID
 		);
 		if (!$result) {
 			throw new tx_ter_exception_internalServerError(
@@ -984,7 +984,7 @@ class tx_ter_api {
 
 		$result = $GLOBALS['TYPO3_DB']->exec_DELETEquery(
 			'tx_ter_extensiondetails',
-			'extensionuid = ' . (int) $extensionRow['uid']
+			'extensionuid = ' . (int)$extensionRow['uid']
 		);
 		if (!$result) {
 			throw new tx_ter_exception_internalServerError(
@@ -994,8 +994,8 @@ class tx_ter_api {
 		}
 		$result = $GLOBALS['TYPO3_DB']->exec_DELETEquery(
 			'tx_ter_extensions',
-			'extensionkey="' . $GLOBALS['TYPO3_DB']->quoteStr($extensionKey, 'tx_ter_extensions') .
-			'" AND version="' . $GLOBALS['TYPO3_DB']->quoteStr($version, 'tx_ter_extensions') . '"'
+			'extensionkey=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($extensionKey, 'tx_ter_extensions') .
+			' AND version=' . $GLOBALS['TYPO3_DB']->fullquoteStr($version, 'tx_ter_extensions')
 		);
 		if (!$result) {
 			throw new tx_ter_exception_internalServerError(
@@ -1038,7 +1038,7 @@ class tx_ter_api {
 			$GLOBALS['TYPO3_DB']->exec_SELECTquery(
 				'uid',
 				'tx_ter_extensions',
-				'extensionkey = "' . strtolower($extensionInfoData->extensionKey) . '" AND version = "' . $extensionInfoData->version . '"'
+				'extensionkey = ' . $GLOBALS['TYPO3_DB']->fullQuoteStr(strtolower($extensionInfoData->extensionKey)) . ' AND version = ' . $GLOBALS['TYPO3_DB']->fullQuoteStr($extensionInfoData->version)
 			)
 		);
 	}
@@ -1234,7 +1234,7 @@ class tx_ter_api {
 			$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
 				'*',
 				'fe_users',
-				'username="' . $GLOBALS['TYPO3_DB']->quoteStr($modifyExtensionKeyData->ownerUsername, 'fe_users') . '"' . $GLOBALS['TSFE']->sys_page->enableFields('fe_users')
+				'username=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($modifyExtensionKeyData->ownerUsername, 'fe_users') . $GLOBALS['TSFE']->sys_page->enableFields('fe_users')
 			);
 			if ($newOwnerUserRecordArr = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res)) {
 				$updateValues['ownerusername'] = $newOwnerUserRecordArr['username'];
@@ -1243,7 +1243,7 @@ class tx_ter_api {
 
 		$res = $GLOBALS['TYPO3_DB']->exec_UPDATEquery(
 			'tx_ter_extensionkeys',
-			'extensionkey ="' . $GLOBALS['TYPO3_DB']->quoteStr($modifyExtensionKeyData->extensionKey, 'tx_ter_extensionkeys') . '"',
+			'extensionkey =' . $GLOBALS['TYPO3_DB']->fullQuoteStr($modifyExtensionKeyData->extensionKey, 'tx_ter_extensionkeys'),
 			$updateValues
 		);
 		if (!$res) {
@@ -1277,8 +1277,8 @@ class tx_ter_api {
 		$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
 			'uid',
 			'tx_ter_extensions',
-			'extensionkey ="' . $GLOBALS['TYPO3_DB']->quoteStr($setReviewStateData->extensionKey, 'tx_ter_extensions') . '" AND ' .
-			'version ="' . $GLOBALS['TYPO3_DB']->quoteStr($setReviewStateData->version, 'tx_ter_extensions') . '"'
+			'extensionkey =' . $GLOBALS['TYPO3_DB']->fullQuoteStr($setReviewStateData->extensionKey, 'tx_ter_extensions') . ' AND ' .
+			'version =' . $GLOBALS['TYPO3_DB']->fullQuoteStr($setReviewStateData->version, 'tx_ter_extensions')
 		);
 		if (!$res) {
 			throw new tx_ter_exception_internalServerError('Database error while searching for extension record.', TX_TER_ERROR_GENERAL_DATABASEERROR);
@@ -1289,8 +1289,8 @@ class tx_ter_api {
 
 		$res = $GLOBALS['TYPO3_DB']->exec_UPDATEquery(
 			'tx_ter_extensions',
-			'extensionkey ="' . $GLOBALS['TYPO3_DB']->quoteStr($setReviewStateData->extensionKey, 'tx_ter_extensions') . '" AND ' .
-			'version ="' . $GLOBALS['TYPO3_DB']->quoteStr($setReviewStateData->version, 'tx_ter_extensions') . '"',
+			'extensionkey =' . $GLOBALS['TYPO3_DB']->fullQuoteStr($setReviewStateData->extensionKey, 'tx_ter_extensions') . ' AND ' .
+			'version =' . $GLOBALS['TYPO3_DB']->fullQuoteStr($setReviewStateData->version, 'tx_ter_extensions'),
 			array('reviewstate' => (int) $setReviewStateData->reviewState)
 		);
 		if (!$res) {
@@ -1323,8 +1323,8 @@ class tx_ter_api {
 		$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
 			'uid, downloadcounter',
 			'tx_ter_extensions',
-			'extensionkey ="' . $GLOBALS['TYPO3_DB']->quoteStr($extensionVersionDataAndIncrementor->extensionKey, 'tx_ter_extensions') . '" AND ' .
-			'version ="' . $GLOBALS['TYPO3_DB']->quoteStr($extensionVersionDataAndIncrementor->version, 'tx_ter_extensions') . '"'
+			'extensionkey =' . $GLOBALS['TYPO3_DB']->fullQuoteStr($extensionVersionDataAndIncrementor->extensionKey, 'tx_ter_extensions') . ' AND ' .
+			'version =' . $GLOBALS['TYPO3_DB']->fullQuoteStr($extensionVersionDataAndIncrementor->version, 'tx_ter_extensions')
 		);
 		if (!$res) {
 			throw new tx_ter_exception_internalServerError('Database error while searching for extension record.', TX_TER_ERROR_GENERAL_DATABASEERROR);
@@ -1342,7 +1342,7 @@ class tx_ter_api {
 
 		$res = $GLOBALS['TYPO3_DB']->exec_UPDATEquery(
 			'tx_ter_extensions',
-			'uid=' . (int) $currentRow['uid'],
+			'uid=' . (int)$currentRow['uid'],
 			array('downloadcounter' => $newCounter)
 		);
 		if (!$res) {
@@ -1352,7 +1352,7 @@ class tx_ter_api {
 		$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
 			'uid, downloadcounter',
 			'tx_ter_extensionkeys',
-			'extensionkey ="' . $GLOBALS['TYPO3_DB']->quoteStr($extensionVersionDataAndIncrementor->extensionKey, 'tx_ter_extensions') . '"'
+			'extensionkey =' . $GLOBALS['TYPO3_DB']->fullQuoteStr($extensionVersionDataAndIncrementor->extensionKey, 'tx_ter_extensions')
 		);
 		if (!$res) {
 			throw new tx_ter_exception_internalServerError('Database error while searching for extension key record.', TX_TER_ERROR_GENERAL_DATABASEERROR);
@@ -1366,7 +1366,7 @@ class tx_ter_api {
 
 		$res = $GLOBALS['TYPO3_DB']->exec_UPDATEquery(
 			'tx_ter_extensionkeys',
-			'uid=' . $currentRow['uid'],
+			'uid=' . (int)$currentRow['uid'],
 			array('downloadcounter' => $newCounter)
 		);
 		if (!$res) {
