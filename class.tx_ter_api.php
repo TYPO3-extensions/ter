@@ -113,6 +113,12 @@ class tx_ter_api {
 	 * @since     2.0.0
 	 */
 	public function uploadExtension($accountData, $extensionInfoData, $filesData) {
+		// When the extension has only one dependency, $extensionInfoData->technicalData->dependencies is a stdObj instead of an array
+		// All following code will then fail, because it is tested if it was an array.
+		// To make it work, we wrap the object into an array, so that the following code works as expected
+		if (!empty($extensionInfoData->technicalData->dependencies) && is_object($extensionInfoData->technicalData->dependencies)) {
+			$extensionInfoData->technicalData->dependencies = array($extensionInfoData->technicalData->dependencies);
+		}
 		$extensionKey = strtolower($extensionInfoData->extensionKey);
 		if (TYPO3_DLOG) {
 			t3lib_div::devLog(
