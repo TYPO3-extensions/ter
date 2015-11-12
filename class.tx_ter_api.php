@@ -1075,6 +1075,7 @@ class tx_ter_api {
 			$result = TX_TER_ERROR_UPLOADEXTENSION_TYPO3DEPENDENCYINCORRECT;
 			// Collect currently supported core versions
 			$supportedCoreVersions = array();
+			$oldestSupportedCoreVersion = '99.99.99';
 			$newestCoreVersion = '0.0.0';
 			foreach ($currentCores as $version => $coreInfo) {
 				if ($coreInfo['active'] === TRUE) {
@@ -1085,17 +1086,34 @@ class tx_ter_api {
 						// Manage core version without branch (>= 7 LTS)
 						$latestBranchVersion = $version . '.99.999';
 					}
+
+					// Checks the latest version
 					if (!preg_match('/dev|alpha/', $latestBranchVersion)) {
 						$supportedCoreVersions[] = $latestBranchVersion;
 						if (version_compare($newestCoreVersion, $latestBranchVersion, '<')) {
 							$newestCoreVersion = $latestBranchVersion;
 						}
 					}
+
+					// Check the oldest active version
+					if (version_compare($version . '.0', $oldestSupportedCoreVersion, '<')) {
+						$oldestSupportedCoreVersion = $version;
+					}
 				}
 			}
 			// clean newest core version
 			preg_match('/^(\d+)\.(\d+)\.(\d+)/', $newestCoreVersion, $matches);
 			$newestCoreVersion = $matches[1] . '.' . $matches[2] . '.999';
+
+			// get first beta of oldest active version
+			$oldestSupportedCoreVersionReleases = array_reverse($currentCores[$oldestSupportedCoreVersion]['releases']);
+			foreach ($oldestSupportedCoreVersionReleases as $subVersion => $subVersionInfo) {
+				if (!preg_match('/dev|alpha/', $subVersion)) {
+					$oldestSupportedCoreVersion = $subVersion;
+					break;
+				}
+			}
+
 			// Compare currently supported core version with the dependency in the extension
 			$typo3Range = '';
 			if (is_array($extensionInfoData->technicalData->dependencies)) {
@@ -1123,6 +1141,9 @@ class tx_ter_api {
 					$result = TX_TER_ERROR_UPLOADEXTENSION_TYPO3DEPENDENCYINCORRECT;
 				} else if (version_compare($lower, '0.0.0', '<=') || version_compare($upper, '0.0.0', '<=')) {
 					// Either part is a zero version (n < n.0 < n.0.0)
+					$result = TX_TER_ERROR_UPLOADEXTENSION_TYPO3DEPENDENCYINCORRECT;
+				} else if (version_compare($upper, $oldestSupportedCoreVersion, '<')) {
+					// Upper limit is lower than oldest core version
 					$result = TX_TER_ERROR_UPLOADEXTENSION_TYPO3DEPENDENCYINCORRECT;
 				} else if (version_compare($upper, $newestCoreVersion, '>')) {
 					// Upper limit is larger than newest core version
