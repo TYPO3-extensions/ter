@@ -702,17 +702,15 @@ class tx_ter_api {
 		if (is_array($extensionInfoData->technicalData->dependencies)) {
 			foreach ($extensionInfoData->technicalData->dependencies as $dependencyArr) {
 				switch ($dependencyArr->extensionKey) {
-					case 'typo3' :
-						$typo3Version = $dependencyArr->versionRange;
-						break;
+					case 'typo3':
 					case 'php':
-						$phpVersion = $dependencyArr->versionRange;
+						$dependenciesArr[$dependencyArr->extensionKey] = $dependencyArr->versionRange;
 						break;
 					default:
 						if ($dependencyArr->kind == 'requires') {
-							$dependenciesArr[] = $dependencyArr->extensionKey;
-						} elseif ($dependencyArr->kind == 'requires') {
-							$conflictsArr[] = $dependencyArr->extensionKey;
+							$dependenciesArr[$dependencyArr->extensionKey] = $dependencyArr->versionRange;
+						} elseif ($dependencyArr->kind == 'conflicts') {
+							$conflictsArr[$dependencyArr->extensionKey] = $dependencyArr->versionRange;
 						}
 				}
 			}
@@ -725,12 +723,8 @@ class tx_ter_api {
 			'category' => $extensionInfoData->metaData->category,
 			'shy' => in_array(strtolower((string) $extensionInfoData->technicalData->shy), array('1', 'false'), TRUE),
 			'version' => $extensionInfoData->version,
-			'dependencies' => implode(',', $dependenciesArr),
-			'conflicts' => implode(',', $conflictsArr),
 			'priority' => $extensionInfoData->technicalData->priority,
 			'loadOrder' => $extensionInfoData->technicalData->loadOrder,
-			'TYPO3_version' => $typo3Version,
-			'PHP_version' => $phpVersion,
 			'module' => $extensionInfoData->technicalData->modules,
 			'state' => $extensionInfoData->metaData->state,
 			'uploadfolder' => in_array(strtolower((string) $extensionInfoData->technicalData->uploadFolder), array('1', 'false'), TRUE),
@@ -743,6 +737,11 @@ class tx_ter_api {
 			'author_company' => $extensionInfoData->metaData->authorCompany,
 			'CGLcompliance' => $extensionInfoData->infoData->codingGuidelineCompliance,
 			'CGLcompliance_note' => $extensionInfoData->infoData->codeingGuidelineComplianceNote,
+			'constraints' => array(
+				'depends' => $dependenciesArr,
+				'conflicts' => $conflictsArr,
+				'suggests' => array()
+			)
 		);
 
 		// Compile T3X Data Array:
