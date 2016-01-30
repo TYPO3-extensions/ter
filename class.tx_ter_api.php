@@ -803,18 +803,43 @@ class tx_ter_api {
 	public function uploadExtension_writeExtensionInfoToDB($accountData, $extensionInfoData, $filesData) {
 		// Prepare information about files
 		$extensionInfoData->technicalData->isManualIncluded = 0;
+		$composerInfo = array();
 		foreach ($filesData->fileData as $fileData) {
-			$extensionInfoData->infoData->files [$fileData->name] = array(
+			$extensionInfoData->infoData->files[$fileData->name] = array(
 				'filename' => $fileData->name,
 				'size' => $fileData->size,
 				'mtime' => $fileData->modificationTime,
 				'is_executable' => $fileData->isExecutable,
 			);
-			if ($fileData->name === 'doc/manual.sxw') {
-				$extensionInfoData->technicalData->isManualIncluded = 1;
+
+			switch (trim($fileData->name, '/\\')) {
+				case 'doc/manual.sxw':
+					$extensionInfoData->technicalData->isManualIncluded = 1;
+					break;
+				case 'ext_emconf.php':
+					$autoload = array();
+					if (is_callable('Tx_TerFe2_Utility_Archive::extractEmConf')) {
+						$emConfData = Tx_TerFe2_Utility_Archive::extractEmConf($fileData->content);
+						if (!empty($emConfData['autoload'])) {
+							$autoload = $emConfData['autoload'];
+						}
+					}
+					break;
+				case 'composer.json':
+					$composerJsonData = json_decode($fileData->content, true);
+					if (!empty($composerJsonData['autoload'])) {
+						$composerInfo['autoload'] = $composerJsonData['autoload'];
+					}
+					$composerInfo['name'] = $composerJsonData['name'];
+					break;
+				default:
+					// Nothing to do here
 			}
 		}
-
+		if (empty($composerInfo) && !empty($autoload)) {
+			$composerInfo = array('autoload' => $autoload);
+		}
+		$extensionInfoData->technicalData->composerInfo = $composerInfo;
 		$extensionKey = strtolower($extensionInfoData->extensionKey);
 
 		// Prepare the new records
@@ -884,6 +909,7 @@ class tx_ter_api {
 			'codelines' => $extensionInfoData->infoData->codeLines,
 			'codebytes' => $extensionInfoData->infoData->codeBytes,
 			'techinfo' => serialize($extensionInfoData->infoData->techInfo),
+			'composerinfo' => json_encode($extensionInfoData->technicalData->composerInfo),
 			'shy' => (int) $extensionInfoData->technicalData->shy,
 			'dependencies' => serialize($dependenciesArr),
 			'createdirs' => $extensionInfoData->technicalData->createDirs,

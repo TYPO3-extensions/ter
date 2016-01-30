@@ -75,6 +75,7 @@ CREATE TABLE tx_ter_extensiondetails (
   codelines int(11) DEFAULT '0' NOT NULL,
   codebytes int(11) DEFAULT '0' NOT NULL,
   techinfo text NOT NULL,
+  composerinfo text NOT NULL,
   shy tinyint(4) DEFAULT '0' NOT NULL,
   dependencies text NOT NULL,
   createdirs text NOT NULL,

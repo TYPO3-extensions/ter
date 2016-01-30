@@ -282,6 +282,14 @@ $TCA['tx_ter_extensiondetails'] = array (
 				'rows' => '3',
 			),
 		),
+		'composerinfo' => array (
+			'label' => 'LLL:EXT:ter/locallang_tca.xml:tx_ter_extensiondetails.composerinfo',
+			'config' => array (
+				'type' => 'text',
+				'cols' => '40',
+				'rows' => '3',
+			),
+		),
 		'shy' => array (
 			'label' => 'LLL:EXT:ter/locallang_tca.xml:tx_ter_extensiondetails.shy',
 			'config' => array (

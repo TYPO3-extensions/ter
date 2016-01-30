@@ -38,6 +38,7 @@
 			<label index="tx_ter_extensiondetails.codelines">Lines of code</label>
 			<label index="tx_ter_extensiondetails.codebytes">Bytes of code</label>
 			<label index="tx_ter_extensiondetails.techinfo">Technical information</label>
+			<label index="tx_ter_extensiondetails.composerinfo">Some information extracted from composer.json</label>
 			<label index="tx_ter_extensiondetails.shy">Is shy</label>
 			<label index="tx_ter_extensiondetails.dependencies">Dependencies</label>
 			<label index="tx_ter_extensiondetails.createdirs">Create dirs</label>

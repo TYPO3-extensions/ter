@@ -322,7 +322,7 @@ class tx_ter_helper {
 			$extensionsTotalDownloadsArr[$row['extensionkey']] = $extensionKeyRow['downloadcounter'];
 
 			$res2 = $TYPO3_DB->exec_SELECTquery(
-				'lastuploaddate,uploadcomment,dependencies,authorname,authoremail,authorcompany',
+				'lastuploaddate,uploadcomment,dependencies,composerinfo,authorname,authoremail,authorcompany',
 				'tx_ter_extensiondetails',
 				'extensionuid=' . (int)$row['uid']
 			);
@@ -355,6 +355,7 @@ class tx_ter_helper {
 				$versionObj->appendChild (new DOMElement('lastuploaddate', $extensionVersionArr['lastuploaddate']));
 				$versionObj->appendChild (new DOMElement('uploadcomment', $this->xmlentities ($extensionVersionArr['uploadcomment'])));
 				$versionObj->appendChild (new DOMElement('dependencies', $extensionVersionArr['dependencies']));
+				$versionObj->appendChild (new DOMElement('composerinfo', $extensionVersionArr['composerinfo']));
 				$versionObj->appendChild (new DOMElement('authorname', $this->xmlentities ($extensionVersionArr['authorname'])));
 				$versionObj->appendChild (new DOMElement('authoremail', $this->xmlentities ($extensionVersionArr['authoremail'])));
 				$versionObj->appendChild (new DOMElement('authorcompany', $this->xmlentities ($extensionVersionArr['authorcompany'])));
