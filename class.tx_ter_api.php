@@ -819,14 +819,14 @@ class tx_ter_api {
 				case 'ext_emconf.php':
 					$autoload = array();
 					if (is_callable('Tx_TerFe2_Utility_Archive::extractEmConf')) {
-						$emConfData = Tx_TerFe2_Utility_Archive::extractEmConf($fileData->content);
+						$emConfData = Tx_TerFe2_Utility_Archive::extractEmConf(base64_decode($fileData->content));
 						if (!empty($emConfData['autoload'])) {
 							$autoload = $emConfData['autoload'];
 						}
 					}
 					break;
 				case 'composer.json':
-					$composerJsonData = json_decode($fileData->content, true);
+					$composerJsonData = json_decode(base64_decode($fileData->content), true);
 					if (!empty($composerJsonData['autoload'])) {
 						$composerInfo['autoload'] = $composerJsonData['autoload'];
 					}
