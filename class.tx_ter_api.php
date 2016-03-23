@@ -702,7 +702,13 @@ class tx_ter_api {
 		if (is_array($extensionInfoData->technicalData->dependencies)) {
 			foreach ($extensionInfoData->technicalData->dependencies as $dependency) {
 				$dependency = json_decode(json_encode($dependency), TRUE);
-				$constraints[$dependency['kind']][$dependency['extensionKey']] = $dependency['versionRange'];
+				if (
+					!empty($dependency['kind'])
+					&& !empty($dependency['extensionKey'])
+					&& in_array($dependency['kind'], array('depends', 'conflicts', 'suggests'), TRUE)
+				) {
+					$constraints[$dependency['kind']][$dependency['extensionKey']] = (string)$dependency['versionRange'];
+				}
 			}
 		}
 
