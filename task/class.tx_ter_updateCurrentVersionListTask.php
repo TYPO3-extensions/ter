@@ -21,44 +21,49 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  * @package TYPO3
  * @subpackage tx_ter
  */
-class tx_ter_updateCurrentVersionListTask extends tx_scheduler_Task {
+class tx_ter_updateCurrentVersionListTask extends tx_scheduler_Task
+{
 
-	/**
-	 * Public method, usually called by scheduler
-	 *
-	 * @return boolean TRUE on success
-	 */
-	public function execute() {
-		$resultCoreData = $this->fetchCurrentCoreData();
-		$resultDocsData = $this->fetchCurrentDocumentationData();
-		return $resultCoreData && $resultDocsData;
-	}
+    /**
+     * Public method, usually called by scheduler
+     *
+     * @return boolean TRUE on success
+     */
+    public function execute()
+    {
+        $resultCoreData = $this->fetchCurrentCoreData();
+        $resultDocsData = $this->fetchCurrentDocumentationData();
 
-	/**
-	 * @return boolean
-	 */
-	protected function fetchCurrentCoreData() {
-		$result = FALSE;
-		$targetFile = PATH_site . $GLOBALS['TYPO3_CONF_VARS']['BE']['fileadminDir'] . 'currentcoredata.json';
-		$sourceData = GeneralUtility::getUrl('http://get.typo3.org/json');
-		if (json_decode($sourceData, TRUE) !== NULL) {
-			$result = GeneralUtility::writeFile($targetFile, $sourceData);
-		}
+        return $resultCoreData && $resultDocsData;
+    }
 
-		return $result;
-	}
+    /**
+     * @return boolean
+     */
+    protected function fetchCurrentCoreData()
+    {
+        $result = false;
+        $targetFile = PATH_site . $GLOBALS['TYPO3_CONF_VARS']['BE']['fileadminDir'] . 'currentcoredata.json';
+        $sourceData = GeneralUtility::getUrl('http://get.typo3.org/json');
+        if (json_decode($sourceData, true) !== null) {
+            $result = GeneralUtility::writeFile($targetFile, $sourceData);
+        }
 
-	/**
-	 * @return boolean
-	 */
-	protected function fetchCurrentDocumentationData() {
-		$result = FALSE;
-		$targetFile = PATH_site . $GLOBALS['TYPO3_CONF_VARS']['BE']['fileadminDir'] . 'currentdocumentationdata.json';
-		$sourceData = GeneralUtility::getUrl('https://docs.typo3.org/typo3cms/extensions/manuals.json');
-		if (json_decode($sourceData, TRUE) !== NULL) {
-			$result = GeneralUtility::writeFile($targetFile, $sourceData);
-		}
+        return $result;
+    }
 
-		return $result;
-	}
+    /**
+     * @return boolean
+     */
+    protected function fetchCurrentDocumentationData()
+    {
+        $result = false;
+        $targetFile = PATH_site . $GLOBALS['TYPO3_CONF_VARS']['BE']['fileadminDir'] . 'currentdocumentationdata.json';
+        $sourceData = GeneralUtility::getUrl('https://docs.typo3.org/typo3cms/extensions/manuals.json');
+        if (json_decode($sourceData, true) !== null) {
+            $result = GeneralUtility::writeFile($targetFile, $sourceData);
+        }
+
+        return $result;
+    }
 }

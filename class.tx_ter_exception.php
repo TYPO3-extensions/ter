@@ -1,4 +1,5 @@
 <?php
+
 /**
  * This file is part of the TYPO3 CMS project.
  *
@@ -11,4 +12,6 @@
  *
  * The TYPO3 project - inspiring people to share!
  */
-class tx_ter_exception extends Exception {}
+class tx_ter_exception extends Exception
+{
+}

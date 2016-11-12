@@ -19,31 +19,34 @@
  *
  * $Id$
  *
- * @author	Robert Lemke <robert@typo3.org>
+ * @author    Robert Lemke <robert@typo3.org>
  */
 
-error_reporting (E_ALL ^ E_NOTICE);
+error_reporting(E_ALL ^ E_NOTICE);
 
-define('TYPO3_OS', stristr(PHP_OS,'win')&&!stristr(PHP_OS,'darwin')?'WIN':'');
-define('TYPO3_MODE','FE');
-define('PATH_thisScript',str_replace('//','/', str_replace('\\','/', (php_sapi_name()=='cgi'||php_sapi_name()=='isapi' ||php_sapi_name()=='cgi-fcgi')&&($_SERVER['ORIG_PATH_TRANSLATED']?$_SERVER['ORIG_PATH_TRANSLATED']:$_SERVER['PATH_TRANSLATED'])? ($_SERVER['ORIG_PATH_TRANSLATED']?$_SERVER['ORIG_PATH_TRANSLATED']:$_SERVER['PATH_TRANSLATED']):($_SERVER['ORIG_SCRIPT_FILENAME']?$_SERVER['ORIG_SCRIPT_FILENAME']:$_SERVER['SCRIPT_FILENAME']))));
+define('TYPO3_OS', stristr(PHP_OS, 'win') && !stristr(PHP_OS, 'darwin') ? 'WIN' : '');
+define('TYPO3_MODE', 'FE');
+define('PATH_thisScript', str_replace('//', '/', str_replace('\\', '/',
+    (php_sapi_name() == 'cgi' || php_sapi_name() == 'isapi' || php_sapi_name() == 'cgi-fcgi') && ($_SERVER['ORIG_PATH_TRANSLATED'] ? $_SERVER['ORIG_PATH_TRANSLATED'] : $_SERVER['PATH_TRANSLATED']) ? ($_SERVER['ORIG_PATH_TRANSLATED'] ? $_SERVER['ORIG_PATH_TRANSLATED'] : $_SERVER['PATH_TRANSLATED']) : ($_SERVER['ORIG_SCRIPT_FILENAME'] ? $_SERVER['ORIG_SCRIPT_FILENAME'] : $_SERVER['SCRIPT_FILENAME']))));
 
-define('PATH_site', str_replace(array('/wsdl', '/typo3conf/ext/ter'), '', dirname(PATH_thisScript)) . '/');
-define('PATH_typo3', PATH_site.'typo3/');
-define('PATH_tslib', PATH_typo3.'sysext/cms/tslib/');
-define('PATH_typo3conf', PATH_site.'typo3conf/');
+define('PATH_site', str_replace(['/wsdl', '/typo3conf/ext/ter'], '', dirname(PATH_thisScript)) . '/');
+define('PATH_typo3', PATH_site . 'typo3/');
+define('PATH_tslib', PATH_typo3 . 'sysext/cms/tslib/');
+define('PATH_typo3conf', PATH_site . 'typo3conf/');
 define('TYPO3_mainDir', 'typo3/');
 
-if (!defined ('TYPO3_db')) 	die ('The configuration file was not included.');
+if (!defined('TYPO3_db')) {
+    die('The configuration file was not included.');
+}
 
-$serviceLocation = \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('TYPO3_SITE_URL').'index.php?id=ter';
-$WSDLSource = file_get_contents(\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('ter').'tx_ter.wsdl');
-$WSDLSource = trim(str_replace ('---SERVICE_LOCATION---', $serviceLocation, $WSDLSource));
+$serviceLocation = \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('TYPO3_SITE_URL') . 'index.php?id=ter';
+$WSDLSource = file_get_contents(\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('ter') . 'tx_ter.wsdl');
+$WSDLSource = trim(str_replace('---SERVICE_LOCATION---', $serviceLocation, $WSDLSource));
 
 if (!headers_sent()) {
-	header('Content-type: text/xml');
-	header('Content-Length: ' . strlen($WSDLSource));
+    header('Content-type: text/xml');
+    header('Content-Length: ' . strlen($WSDLSource));
 }
-echo ($WSDLSource);
+echo($WSDLSource);
 
 ?>

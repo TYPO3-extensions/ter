@@ -11,7 +11,10 @@
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * Exception reflecting that version exists in repository (HTTP error code 424)
  */
-class tx_ter_exception_versionExists extends tx_ter_exception {}
+class tx_ter_exception_versionExists extends tx_ter_exception
+{
+}

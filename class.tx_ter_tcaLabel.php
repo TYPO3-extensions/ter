@@ -19,31 +19,31 @@
  * @package TYPO3
  * @subpackage tx_ter
  */
-class tx_ter_tcaLabel {
+class tx_ter_tcaLabel
+{
 
-	/**
-	 * Returns an extension key by given params
-	 *
-	 * @param array $params Parameters
-	 * @param object $pObj Parent object reference
-	 * @return string
-	 */
-	public function getExtensionKey(&$params, &$pObj) {
-		if (empty($params['row']['uid'])) {
-			return;
-		}
+    /**
+     * Returns an extension key by given params
+     *
+     * @param array $params Parameters
+     * @param object $pObj Parent object reference
+     * @return string
+     */
+    public function getExtensionKey(&$params, &$pObj)
+    {
+        if (empty($params['row']['uid'])) {
+            return;
+        }
 
-		$result = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow(
-			'extensionkey',
-			'tx_ter_extensions',
-			'uid=' . (int) $params['row']['uid']
-		);
+        $result = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow(
+            'extensionkey', 'tx_ter_extensions', 'uid=' . (int)$params['row']['uid']
+        );
 
-		if (!empty($result['extensionkey'])) {
-			$params['title'] = htmlspecialchars($result['extensionkey']);
-		} else {
-			$params['title'] = (int) $params['row']['uid'];
-		}
-	}
+        if (!empty($result['extensionkey'])) {
+            $params['title'] = htmlspecialchars($result['extensionkey']);
+        } else {
+            $params['title'] = (int)$params['row']['uid'];
+        }
+    }
 
 }
