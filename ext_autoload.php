@@ -1,5 +1,5 @@
 <?php
-	$extensionPath = t3lib_extMgm::extPath('ter');
+	$extensionPath = \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('ter');
 
 	return array(
 		'tx_ter_api' => $extensionPath . 'class.tx_ter_api.php',

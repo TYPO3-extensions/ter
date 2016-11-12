@@ -6,8 +6,8 @@
  * files and the extensions.xml.gz index. As this script was only neccessary for the initial
  * import of all extensions, it possibly will never be needed again and only stays here
  * for historical reasons.
- * 
- * Keep off - never ever use this at TYPO3.org again ... 
+ *
+ * Keep off - never ever use this at TYPO3.org again ...
  */
 
 die ('Better not ...');
@@ -47,7 +47,7 @@ $extensionKeyCounter = 0;
 $extensionKeysWithProblems = array();
 while ($extensionKeyRow = $TYPO3_DB->sql_fetch_assoc ($res)) {
 	$extensionKeyCounter ++;
-	
+
 	$res2 = $TYPO3_DB->exec_SELECTquery (
 		'username',
 		'fe_users',
@@ -69,12 +69,12 @@ while ($extensionKeyRow = $TYPO3_DB->sql_fetch_assoc ($res)) {
 			'extensionkey' => $extensionKeyRow['extension_key'],
 			'ownerusername' => $accountData['username'],
 			'maxstoresize' => $extensionKeyRow['maxStoreSize'],
-	  		'downloadcounter' => $extensionKeyRow['download_counter']			
-		);		
+	  		'downloadcounter' => $extensionKeyRow['download_counter']
+		);
 
 		$TYPO3_DB->exec_INSERTquery (
-			'tx_ter_extensionkeys', 
-			$newExtensionKeyRow 
+			'tx_ter_extensionkeys',
+			$newExtensionKeyRow
 		);
 
 	} else {
@@ -83,22 +83,22 @@ while ($extensionKeyRow = $TYPO3_DB->sql_fetch_assoc ($res)) {
 			'tx_extrep_repository',
 			'extension_uid = '.$extensionKeyRow['uid']
 		);
-	
+
 		$versionOfExtension = 1;
 		while ($extensionVersionRow = $TYPO3_DB->sql_fetch_assoc ($res2)) {
 			$extensionVersionCounter ++;
-	
+
 			echo (str_pad ($extensionVersionRow['version'], 7, ' '));
-	
-			$filesData = unserialize (gzuncompress($extensionVersionRow['datablob']));			
+
+			$filesData = unserialize (gzuncompress($extensionVersionRow['datablob']));
 			$extensionData = getExtensionDataFromRepositoryRow($extensionKeyRow, $extensionVersionRow);
-					
+
 			if (is_array ($filesData)) {
 				writeExtensionAndIconFile ($extensionData, $filesData);
-				writeExtensionInfoToDB ($accountData, $extensionData, $filesData, $extensionVersionRow, $versionOfExtension);		
+				writeExtensionInfoToDB ($accountData, $extensionData, $filesData, $extensionVersionRow, $versionOfExtension);
 				$versionOfExtension ++;
 			} else {
-				$extensionKeysWithProblems [] = $extensionKeyRow['extension_key'];	
+				$extensionKeysWithProblems [] = $extensionKeyRow['extension_key'];
 			}
 		}
 	}
@@ -125,15 +125,15 @@ Extension keys with problems:
 function getExtensionDataFromRepositoryRow ($extensionKeyRow, $extensionVersionRow) {
 
 		// *** DEPENDENCIES
-	
+
 	$typo3VersionMax = $extensionVersionRow['emconf_TYPO3_version_max'] > 0 ? versionConv ($extensionVersionRow['emconf_TYPO3_version_max'], 1) : '';
 	$typo3VersionMin = $extensionVersionRow['emconf_TYPO3_version_min'] > 0 ? versionConv ($extensionVersionRow['emconf_TYPO3_version_min'], 1) : '';
 
 	$phpVersionMax = $extensionVersionRow['emconf_PHP_version_max'] > 0 ? versionConv ($extensionVersionRow['emconf_PHP_version_max'], 1) : '';
 	$phpVersionMin = $extensionVersionRow['emconf_PHP_version_min'] > 0 ? versionConv ($extensionVersionRow['emconf_PHP_version_min'], 1) : '';
-	
-	$typo3VersionRange = (strlen ($typo3VersionMin) && strlen ($typo3VersionMax)) ? $typo3VersionMin .'-'.$typo3VersionMax : ''; 
-	$phpVersionRange = (strlen ($phpVersionMin) && strlen ($phpVersionMax)) ? $phpVersionMin .'-'.$phpVersionMax : ''; 
+
+	$typo3VersionRange = (strlen ($typo3VersionMin) && strlen ($typo3VersionMax)) ? $typo3VersionMin .'-'.$typo3VersionMax : '';
+	$phpVersionRange = (strlen ($phpVersionMin) && strlen ($phpVersionMax)) ? $phpVersionMin .'-'.$phpVersionMax : '';
 
 	$dependenciesArr = array (
 		array (
@@ -147,30 +147,30 @@ function getExtensionDataFromRepositoryRow ($extensionKeyRow, $extensionVersionR
 			'versionRange' => $phpVersionRange,
 		)
 	);
-	
-	$otherDependenciesArr = t3lib_div::trimExplode (',',$extensionVersionRow['emconf_dependencies']);
+
+	$otherDependenciesArr = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode (',',$extensionVersionRow['emconf_dependencies']);
 	if (is_array ($otherDependenciesArr) && count ($otherDependenciesArr)) {
 		foreach ($otherDependenciesArr as $dependencyExtKey) {
 			$dependenciesArr [] = array (
 				'kind' => 'depends',
 				'extensionKey' => utf8_encode($dependencyExtKey),
 				'versionRange' => '',
-			);	
+			);
 		}
 	}
-	$otherDependenciesArr = t3lib_div::trimExplode (',',$extensionVersionRow['emconf_conflicts']);
+	$otherDependenciesArr = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode (',',$extensionVersionRow['emconf_conflicts']);
 	if (is_array ($otherDependenciesArr) && count ($otherDependenciesArr)) {
 		foreach ($otherDependenciesArr as $dependencyExtKey) {
 			$dependenciesArr [] = array (
 				'kind' => 'conflicts',
 				'extensionKey' => utf8_encode($dependencyExtKey),
-				'versionRange' => '',				
-			);	
+				'versionRange' => '',
+			);
 		}
 	}
-								
+
 		// ** COMPILE EVERYTHING
-				
+
 	$extensionData = array (
 		'extensionKey' => $extensionKeyRow['extension_key'],
 		'version' => $extensionVersionRow['version'],
@@ -186,14 +186,14 @@ function getExtensionDataFromRepositoryRow ($extensionKeyRow, $extensionVersionR
 		'technicalData' => array (
 			'dataSize' => $extensionVersionRow['datasize'],
 			'dataSizeCompressed' => $extensionVersionRow['datasize_gz'],
-			'dependencies' => $dependenciesArr,	
+			'dependencies' => $dependenciesArr,
 			'loadOrder' => $extensionVersionRow['emconf_loadOrder'],
 			'uploadFolder' => $extensionVersionRow['emconf_uploadfolder'],
 			'createDirs' => $extensionVersionRow['emconf_createDirs'],
 			'shy' => $extensionVersionRow['emconf_shy'],
 			'modules' => $extensionVersionRow['emconf_module'],
 			'modifyTables' => $extensionVersionRow['emconf_modify_tables'],
-			'priority' => $extensionVersionRow['emconf_priority'],				
+			'priority' => $extensionVersionRow['emconf_priority'],
 			'clearCacheOnLoad' => $extensionVersionRow['emconf_clearCacheOnLoad'],
 			'lockType' => $extensionVersionRow['emconf_lockType'],
 			'isManualIncluded' => $extensionVersionRow['is_manual_included'] ? 1 : 0,
@@ -207,10 +207,10 @@ function getExtensionDataFromRepositoryRow ($extensionKeyRow, $extensionVersionR
 			'techInfo' => unserialize (utf8_encode($extensionVersionRow['techinfo'])),
 		),
 	);
-	return $extensionData;	
+	return $extensionData;
 }
 
-function writeExtensionAndIconFile (&$extensionData, $filesData) { 
+function writeExtensionAndIconFile (&$extensionData, $filesData) {
 
 			// Create an old-style list of dependencies, conflicts etc. which is understood by older
 			// versions of the Extension Manager:
@@ -229,16 +229,16 @@ function writeExtensionAndIconFile (&$extensionData, $filesData) {
 				break;
 				default:
 					if ($dependencyArr['kind'] == 'requires') {
-						$dependenciesArr[] = $dependencyArr['extensionKey']; 	
+						$dependenciesArr[] = $dependencyArr['extensionKey'];
 					} elseif ($dependencyArr['kind'] == 'requires') {
-						$conflictsArr[] = $dependencyArr['extensionKey']; 	
-					}				
-			}			
+						$conflictsArr[] = $dependencyArr['extensionKey'];
+					}
+			}
 		}
 
 			// Prepare Files Data Array:
 		$preparedFilesDataArr = array();
-		foreach ($filesData as $fileData) {			
+		foreach ($filesData as $fileData) {
 			$preparedFilesDataArr[$fileData['name']] = array (
 				'name' => $fileData['name'],
 				'size' => $fileData['size'],
@@ -248,7 +248,7 @@ function writeExtensionAndIconFile (&$extensionData, $filesData) {
 				'content_md5' => md5 ($fileData['content'])
 			);
 		}
-		
+
 			// Prepare EM_CONF Array:
 		$preparedEMConfArr = array(
 			'title' => $extensionData['metaData']['title'],
@@ -277,14 +277,14 @@ function writeExtensionAndIconFile (&$extensionData, $filesData) {
 		);
 
 			// Compile T3X Data Array:
-		$dataArr = array (		
+		$dataArr = array (
 			'extKey' => $extensionData['extensionKey'],
 			'EM_CONF' => $preparedEMConfArr,
 			'misc' => array (),
 			'techInfo' => array (),
 			'FILES' => $preparedFilesDataArr
 		);
-		
+
 		$t3xFileUncompressedData = serialize ($dataArr);
 		$t3xFileData = md5 ($t3xFileUncompressedData) . ':gzcompress:'.gzcompress ($t3xFileUncompressedData);
 		$gifFileData = $preparedFilesDataArr['ext_icon.gif']['content'];
@@ -294,19 +294,19 @@ function writeExtensionAndIconFile (&$extensionData, $filesData) {
 		$firstLetter = strtolower (substr ($extensionData['extensionKey'], 0, 1));
 		$secondLetter = strtolower (substr ($extensionData['extensionKey'], 1, 1));
 		$fullPath = $GLOBALS['repositoryDir'].$firstLetter.'/'.$secondLetter.'/';
-		
+
 		if (@!is_dir ($GLOBALS['repositoryDir'] . $firstLetter)) mkdir ($GLOBALS['repositoryDir'] . $firstLetter);
 		if (@!is_dir ($GLOBALS['repositoryDir'] . $firstLetter . '/'. $secondLetter)) mkdir ($GLOBALS['repositoryDir'] . $firstLetter . '/' .$secondLetter);
 
-		list ($majorVersion, $minorVersion, $devVersion) = t3lib_div::intExplode ('.', $extensionData['version']);
+		list ($majorVersion, $minorVersion, $devVersion) = \TYPO3\CMS\Core\Utility\GeneralUtility::intExplode ('.', $extensionData['version']);
 		$t3xFileName = strtolower ($extensionData['extensionKey']).'_'.$majorVersion.'.'.$minorVersion.'.'.$devVersion.'.t3x';
 		$gifFileName = strtolower ($extensionData['extensionKey']).'_'.$majorVersion.'.'.$minorVersion.'.'.$devVersion.'.gif';
 
-			// Write the files		
+			// Write the files
 		$fh = @fopen ($fullPath.$t3xFileName, 'wb');
 		if (!$fh) {}
 		fwrite ($fh, $t3xFileData);
-		fclose ($fh);	
+		fclose ($fh);
 
 		if (strlen ($gifFileData)) {
 			$fh = @fopen ($fullPath.$gifFileName, 'wb');
@@ -314,11 +314,11 @@ function writeExtensionAndIconFile (&$extensionData, $filesData) {
 			fwrite ($fh, $gifFileData);
 			fclose ($fh);
 		}
-		
+
 			// Write some data back to $extensionInfoData:
 		$extensionData['t3xFileMD5'] = md5 ($t3xFileData);
 		$extensionData['infoData']['dataSize'] = strlen ($t3xFileUncompressedData);
-		$extensionData['infoData']['dataSizeCompressed'] = strlen ($t3xFileData);		
+		$extensionData['infoData']['dataSizeCompressed'] = strlen ($t3xFileData);
 }
 
 function writeExtensionInfoToDB ($accountData, $extensionData, $filesData, $extensionVersionRow, $versionOfExtension) {
@@ -343,23 +343,23 @@ function writeExtensionInfoToDB ($accountData, $extensionData, $filesData, $exte
 			'description' => $extensionData['metaData']['description'],
 			'ownerusername' => $accountData['username'],
 			'maxstoresize' => $oldExtensionKeyRow['maxStoreSize'],
-	  		'downloadcounter' => $oldExtensionKeyRow['download_counter']			
-		);		
+	  		'downloadcounter' => $oldExtensionKeyRow['download_counter']
+		);
 
 		$TYPO3_DB->exec_INSERTquery (
-			'tx_ter_extensionkeys', 
-			$extensionKeyRow 
+			'tx_ter_extensionkeys',
+			$extensionKeyRow
 		);
 	}
 
 		// Prepare files information:
-	foreach ($filesData as $fileData) {			
+	foreach ($filesData as $fileData) {
 		$extensionData['infoData']['files'][$fileData['name']] = array (
 			'name' => $fileData['name'],
 			'size' => $fileData['size'],
 			'mtime' => $fileData['mtime'],
 			'is_executable' => $fileData['is_executable'],
-		);			
+		);
 		if ($fileData['name'] == 'doc/manual.sxw')	{
 			$extensionInfoData['technicalData']['isManualIncluded'] = 1;
 		}
@@ -378,7 +378,7 @@ function writeExtensionInfoToDB ($accountData, $extensionData, $filesData, $exte
 		'state' => $extensionData['metaData']['state'],
 		'ismanualincluded' => $extensionData['technicalData']['isManualIncluded'],
 		'downloadcounter' => $extensionVersionRow['download_counter'],
-		't3xfilemd5' => $extensionData['t3xFileMD5'],			
+		't3xfilemd5' => $extensionData['t3xFileMD5'],
 	);
 
 	$result = $TYPO3_DB->exec_INSERTquery ('tx_ter_extensions', $extensionsRow);
@@ -413,7 +413,7 @@ function writeExtensionInfoToDB ($accountData, $extensionData, $filesData, $exte
 	);
 
 	$TYPO3_DB->exec_INSERTquery ('tx_ter_extensiondetails',	$extensionDetailsRow);
-  
+
 }
 
 	/**
@@ -455,7 +455,7 @@ function writeExtensionInfoToDB ($accountData, $extensionData, $filesData, $exte
 				$result = intval(substr($int,0,-6)).'.'.intval(substr($int,-6,-3)).'.'.intval(substr($int,-3)).$suffix;
 			}
 		} else {	// From string to double
-			$result = t3lib_div::int_from_ver($input);
+			$result = \TYPO3\CMS\Core\Utility\GeneralUtility::int_from_ver($input);
 			if (preg_match('/(dev|a|b|rc)([0-9]*)$/', strtolower($input), $reg))	{
 				$dec = intval($subDecIndex[$reg[1]]).$reg[2];
 				$result = (double)(($result-1).'.'.$dec);
@@ -470,7 +470,7 @@ function writeExtensionInfoToDB ($accountData, $extensionData, $filesData, $exte
 	 * extensions in the TER.
 	 *
 	 * @return	void
-	 * @access	public 
+	 * @access	public
 	 */
 	function writeExtensionIndexfile ()	{
 		global $TYPO3_DB;
@@ -484,7 +484,7 @@ function writeExtensionInfoToDB ($accountData, $extensionData, $filesData, $exte
 			'tx_ter_extensions',
 			'1'
 		);
-		
+
 			// Read the extension records from the DB:
 		$extensionsAndVersionsArr = array();
 		$extensionsTotalDownloadsArr = array();
@@ -505,7 +505,7 @@ function writeExtensionInfoToDB ($accountData, $extensionData, $filesData, $exte
 			);
 			$detailsRow = $TYPO3_DB->sql_fetch_assoc($res2);
 			if (is_array ($detailsRow)) {
-				$row = $row + $detailsRow;	
+				$row = $row + $detailsRow;
 			}
 			$extensionsAndVersionsArr [$row['extensionkey']][$row['version']] = $row;
 		}
@@ -520,11 +520,11 @@ function writeExtensionInfoToDB ($accountData, $extensionData, $filesData, $exte
 			$extensionObj = $extensionsObj->appendChild (new DOMElement('extension'));
 			$extensionObj->appendChild (new DOMAttr ('extensionkey', $extensionKey));
 			$extensionObj->appendChild (new DOMElement ('downloadcounter', xmlentities ($extensionsTotalDownloadsArr[$extensionKey])));
-			
+
 			foreach ($extensionVersionsArr as $versionNumber => $extensionVersionArr) {
 				$versionObj = $extensionObj->appendChild (new DOMElement('version'));
 				$versionObj->appendChild (new DOMAttr ('version', $versionNumber));
-				
+
 				$versionObj->appendChild (new DOMElement('title', xmlentities ($extensionVersionArr['title'])));
 				$versionObj->appendChild (new DOMElement('description', xmlentities ($extensionVersionArr['description'])));
 				$versionObj->appendChild (new DOMElement('state', xmlentities ($extensionVersionArr['state'])));
@@ -544,14 +544,14 @@ function writeExtensionInfoToDB ($accountData, $extensionData, $filesData, $exte
 
 		$extensionsObj->appendChild (new DOMComment('Index created at '.date("D M j G:i:s T Y")));
 		$extensionsObj->appendChild (new DOMComment('Index created in '.(microtime()-$trackTime).' ms'));
-		
+
 			// Write XML data to disc:
 		$fh = fopen ($GLOBALS['repositoryDir'].'cli-extensions.xml.gz', 'wb');
 		if (!$fh) throw new tx_ter_exception_internalServerError ('Write error while writing extensions index file: '.$GLOBALS['repositoryDir'].'extensions.xml', TX_TER_ERROR_UPLOADEXTENSION_WRITEERRORWHILEWRITINGEXTENSIONSINDEX);
 		fwrite ($fh, gzencode ($dom->saveXML(), 9));
 		fclose ($fh);
-			
-#t3lib_div::devLog('extensions','ter',0,$extensionsArr);		
+
+#\TYPO3\CMS\Core\Utility\GeneralUtility::devLog('extensions','ter',0,$extensionsArr);
 
 
 	}
@@ -561,7 +561,7 @@ function writeExtensionInfoToDB ($accountData, $extensionData, $filesData, $exte
 	 *
 	 * @param	string		$string: String to encode
 	 * @return	string		&,",',< and > replaced by entities
-	 * @access	public 
+	 * @access	public
 	 */
 	function xmlentities ($string) {
 		return str_replace ( array ( '&', '"', "'", '<', '>' ), array ( '&amp;' , '&quot;', '&apos;' , '&lt;' , '&gt;' ), $string );

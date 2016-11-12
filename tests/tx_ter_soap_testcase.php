@@ -41,8 +41,8 @@ class tx_ter_soap_testcase extends tx_t3unit_testcase {
 	public function __construct ($name) {
 		parent::__construct ($name);
 
-		$this->WSDLURI = t3lib_div::getIndpEnv('TYPO3_SITE_URL').'wsdl/tx_ter_wsdl.php';
-		$this->SOAPServiceURI = t3lib_div::getIndpEnv('TYPO3_SITE_URL').'index.php?id=ter';
+		$this->WSDLURI = \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('TYPO3_SITE_URL').'wsdl/tx_ter_wsdl.php';
+		$this->SOAPServiceURI = \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('TYPO3_SITE_URL').'index.php?id=ter';
 	}
 
 	/*********************************************************
@@ -866,7 +866,7 @@ class tx_ter_soap_testcase extends tx_t3unit_testcase {
 			self::fail ('SoapFault Exception (#'.$exception->faultcode.'): '.$exception->faultstring);
 		}
 
-		self::assertTrue (is_array ($resultArr) && ($resultArr['resultCode'] == 10000), 'increasing download counters was not successful (result: '.$resultArr['resultCode'].')' .  t3lib_div::view_array($resultArr));
+		self::assertTrue (is_array ($resultArr) && ($resultArr['resultCode'] == 10000), 'increasing download counters was not successful (result: '.$resultArr['resultCode'].')' .  \TYPO3\CMS\Core\Utility\GeneralUtility::view_array($resultArr));
 
 			// Try again with negative incrementor
 		$extensionVersionsAndIncrementors['extensionVersionAndIncrementor'][0]['downloadCountIncrementor'] = -3;
@@ -920,9 +920,9 @@ class tx_ter_soap_testcase extends tx_t3unit_testcase {
 	 */
 
 	protected function createFixture_uploadExtension (&$accountData, &$extensionData, &$filesData) {
-		$dataArr = unserialize (file_get_contents(t3lib_extMgm::extPath('ter').'tests/fixtures/fixture_extuploaddataarray_zipped.dat'));
+		$dataArr = unserialize (file_get_contents(\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('ter').'tests/fixtures/fixture_extuploaddataarray_zipped.dat'));
 		$dataBlobArr = unserialize (gzuncompress($dataArr['datablob']));
-		$specialCharacters = file_get_contents(t3lib_extMgm::extPath('ter').'tests/fixtures/special_characters_utf8.txt');
+		$specialCharacters = file_get_contents(\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('ter').'tests/fixtures/special_characters_utf8.txt');
 
 		$accountData = array (
 			'username' => 't3unit',

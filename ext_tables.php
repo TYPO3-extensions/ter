@@ -3,7 +3,7 @@ if (!defined ('TYPO3_MODE')) {
 	die ('Access denied.');
 }
 
-t3lib_div::loadTCA('tt_content');
+use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 
 	// Add tables to TCA
 $TCA['tx_ter_extensionkeys'] = array (
@@ -13,8 +13,8 @@ $TCA['tx_ter_extensionkeys'] = array (
 		'tstamp'            => 'tstamp',
 		'crdate'            => 'crdate',
 		'title'             => 'LLL:EXT:ter/locallang_tca.xml:tx_ter_extensionkeys',
-		'iconfile'          => t3lib_extMgm::extRelPath($_EXTKEY) . 'tx_ter_extensionkeys.gif',
-		'dynamicConfigFile' => t3lib_extMgm::extPath($_EXTKEY) . 'tca.php',
+		'iconfile'          => ExtensionManagementUtility::extRelPath($_EXTKEY) . 'tx_ter_extensionkeys.gif',
+		'dynamicConfigFile' => ExtensionManagementUtility::extPath($_EXTKEY) . 'tca.php',
 		'dividers2tabs'     => TRUE,
 	)
 );
@@ -24,8 +24,8 @@ $TCA['tx_ter_extensionmembers'] = array (
 		'label'             => 'extensionkey',
 		'default_sortby'    => 'ORDER BY extensionkey',
 		'title'             => 'LLL:EXT:ter/locallang_tca.xml:tx_ter_extensionmembers',
-		'iconfile'          => t3lib_extMgm::extRelPath($_EXTKEY) . 'tx_ter_extensionmembers.gif',
-		'dynamicConfigFile' => t3lib_extMgm::extPath($_EXTKEY) . 'tca.php',
+		'iconfile'          => ExtensionManagementUtility::extRelPath($_EXTKEY) . 'tx_ter_extensionmembers.gif',
+		'dynamicConfigFile' => ExtensionManagementUtility::extPath($_EXTKEY) . 'tca.php',
 		'dividers2tabs'     => TRUE,
 	)
 );
@@ -37,8 +37,8 @@ $TCA['tx_ter_extensions'] = array (
 		'tstamp'            => 'tstamp',
 		'crdate'            => 'crdate',
 		'title'             => 'LLL:EXT:ter/locallang_tca.xml:tx_ter_extensions',
-		'iconfile'          => t3lib_extMgm::extRelPath($_EXTKEY) . 'tx_ter_extensions.gif',
-		'dynamicConfigFile' => t3lib_extMgm::extPath($_EXTKEY) . 'tca.php',
+		'iconfile'          => ExtensionManagementUtility::extRelPath($_EXTKEY) . 'tx_ter_extensions.gif',
+		'dynamicConfigFile' => ExtensionManagementUtility::extPath($_EXTKEY) . 'tca.php',
 		'dividers2tabs'     => TRUE,
 	)
 );
@@ -49,8 +49,8 @@ $TCA['tx_ter_extensiondetails'] = array (
 		'label_userFunc'    => 'EXT:ter/class.tx_ter_tcaLabel.php:tx_ter_tcaLabel->getExtensionKey',
 		'default_sortby'    => 'ORDER BY extensionuid',
 		'title'             => 'LLL:EXT:ter/locallang_tca.xml:tx_ter_extensiondetails',
-		'iconfile'          => t3lib_extMgm::extRelPath($_EXTKEY) . 'tx_ter_extensiondetails.gif',
-		'dynamicConfigFile' => t3lib_extMgm::extPath($_EXTKEY) . 'tca.php',
+		'iconfile'          => ExtensionManagementUtility::extRelPath($_EXTKEY) . 'tx_ter_extensiondetails.gif',
+		'dynamicConfigFile' => ExtensionManagementUtility::extPath($_EXTKEY) . 'tca.php',
 		'dividers2tabs'     => TRUE,
 	)
 );
@@ -63,8 +63,8 @@ $TCA['tx_ter_extensionqueue'] = array (
 		'tstamp'            => 'tstamp',
 		'delete'            => 'deleted',
 		'title'             => 'LLL:EXT:ter/locallang_tca.xml:tx_ter_extensionqueue',
-		'iconfile'          => t3lib_extMgm::extRelPath($_EXTKEY) . 'tx_ter_extensionqueue.gif',
-		'dynamicConfigFile' => t3lib_extMgm::extPath($_EXTKEY) . 'tca.php',
+		'iconfile'          => ExtensionManagementUtility::extRelPath($_EXTKEY) . 'tx_ter_extensionqueue.gif',
+		'dynamicConfigFile' => ExtensionManagementUtility::extPath($_EXTKEY) . 'tca.php',
 		'dividers2tabs'     => TRUE,
 	)
 );
@@ -73,14 +73,14 @@ $TCA['tx_ter_extensionqueue'] = array (
 $TCA['tt_content']['types']['list']['subtypes_excludelist'][$_EXTKEY . '_pi1'] = 'layout,select_key,pages,recursive';
 
 	// Add plugin and datasets
-t3lib_extMgm::addPlugin(array('TER SOAP Server', $_EXTKEY . '_pi1'));
-t3lib_extMgm::allowTableOnStandardPages('tx_ter_extensionkeys');
-t3lib_extMgm::allowTableOnStandardPages('tx_ter_extensionmembers');
-t3lib_extMgm::allowTableOnStandardPages('tx_ter_extensions');
-t3lib_extMgm::allowTableOnStandardPages('tx_ter_extensiondetails');
-t3lib_extMgm::allowTableOnStandardPages('tx_ter_extensionqueue');
+ExtensionManagementUtility::addPlugin(array('TER SOAP Server', $_EXTKEY . '_pi1'));
+ExtensionManagementUtility::allowTableOnStandardPages('tx_ter_extensionkeys');
+ExtensionManagementUtility::allowTableOnStandardPages('tx_ter_extensionmembers');
+ExtensionManagementUtility::allowTableOnStandardPages('tx_ter_extensions');
+ExtensionManagementUtility::allowTableOnStandardPages('tx_ter_extensiondetails');
+ExtensionManagementUtility::allowTableOnStandardPages('tx_ter_extensionqueue');
 
 	// Add static configuration files
-t3lib_extMgm::addStaticFile($_EXTKEY, 'resources/static/', 'TER Server');
+ExtensionManagementUtility::addStaticFile($_EXTKEY, 'resources/static/', 'TER Server');
 
 ?>

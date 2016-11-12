@@ -12,7 +12,10 @@
  * The TYPO3 project - inspiring people to share!
  */
 
-require_once t3lib_extMgm::extPath('ter') . 'class.tx_ter_helper.php';
+use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+
+require_once ExtensionManagementUtility::extPath('ter') . 'class.tx_ter_helper.php';
 
 
 /**
@@ -53,15 +56,15 @@ class tx_ter_updateExtensionIndexTask extends tx_scheduler_Task {
 		$repositoryDir = rtrim($extensionConfig['repositoryDir'], '/') . '/';
 		$dummyObject = new stdClass();
 		$dummyObject->repositoryDir = $repositoryDir;
-		$terHelper = t3lib_div::makeInstance('tx_ter_helper', $dummyObject);
+		$terHelper = GeneralUtility::makeInstance('tx_ter_helper', $dummyObject);
 		$terHelper->writeExtensionIndexFile();
 
 			// Clear page cache to force reload of the extension list
-		$pageIds = t3lib_div::intExplode(',', $this->clearCachePages, TRUE);
+		$pageIds = GeneralUtility::intExplode(',', $this->clearCachePages, TRUE);
 		if (!empty($pageIds)) {
 			$terHelper->loadBackendUser(1, '_ter_', TRUE);
 			$terHelper->loadLang();
-			$tce = t3lib_div::makeInstance('t3lib_TCEmain');
+			$tce = GeneralUtility::makeInstance(\TYPO3\CMS\Core\DataHandling\DataHandler::class);
 			$tce->admin = 1;
 			$tce->start(array(), array());
 			foreach ($pageIds as $pageId) {

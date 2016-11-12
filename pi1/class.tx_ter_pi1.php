@@ -31,8 +31,10 @@
  *
  */
 
-require_once(PATH_tslib.'class.tslib_pibase.php');
-require_once(t3lib_extMgm::extPath('ter').'class.tx_ter_api.php');
+use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
+use TYPO3\CMS\Frontend\Plugin\AbstractPlugin;
+
+require_once(ExtensionManagementUtility::extPath('ter').'class.tx_ter_api.php');
 
 /**
  * TYPO3 Extension Repository, frontend plugin for SOAP service
@@ -41,7 +43,7 @@ require_once(t3lib_extMgm::extPath('ter').'class.tx_ter_api.php');
  * @package TYPO3
  * @subpackage tx_ter
  */
-class tx_ter_pi1 extends tslib_pibase {
+class tx_ter_pi1 extends AbstractPlugin {
 
 	public $cObj;											// Standard cObj (parent)
 	public $extensionsPID;									// Start page for extension records

@@ -19,16 +19,18 @@
  * @author    Robert Lemke <robert@typo3.org>
  */
 
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Backend\Utility\BackendUtility;
+
 unset($MCONF);
 require ("conf.php");
 require ($BACK_PATH."init.php");
 require ($BACK_PATH."template.php");
 include ("locallang.php");
-require_once (PATH_t3lib."class.t3lib_scbase.php");
 
 $BE_USER->modAccess($MCONF,1);    							// This checks permissions and exits if the users has no permission for entry.
 
-class tx_ter_module1 extends t3lib_SCbase {
+class tx_ter_module1 extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 
     var $pageinfo;
 
@@ -66,13 +68,13 @@ class tx_ter_module1 extends t3lib_SCbase {
 
         // Access check!
         // The page will show only if there is a valid page and if this page may be viewed by the user
-        $this->pageinfo = t3lib_BEfunc::readPageAccess($this->id,$this->perms_clause);
+        $this->pageinfo = BackendUtility::readPageAccess($this->id,$this->perms_clause);
         $access = is_array($this->pageinfo) ? 1 : 0;
 
         if (($this->id && $access) || ($BE_USER->user["admin"] && !$this->id))    {
 
                 // Draw the header.
-            $this->doc = t3lib_div::makeInstance("mediumDoc");
+            $this->doc = GeneralUtility::makeInstance("mediumDoc");
             $this->doc->backPath = $BACK_PATH;
             $this->doc->form='<form action="" method="POST">';
 
@@ -92,12 +94,12 @@ class tx_ter_module1 extends t3lib_SCbase {
                 </script>
             ';
 
-            $headerSection = $this->doc->getHeader("pages",$this->pageinfo,$this->pageinfo["_thePath"])."<br>".$LANG->php3Lang["labels"]["path"].": ".t3lib_div::fixed_lgd_pre($this->pageinfo["_thePath"],50);
+            $headerSection = $this->doc->getHeader("pages",$this->pageinfo,$this->pageinfo["_thePath"])."<br>".$LANG->php3Lang["labels"]["path"].": ".GeneralUtility::fixed_lgd_pre($this->pageinfo["_thePath"],50);
 
             $this->content.=$this->doc->startPage($LANG->getLL("title"));
             $this->content.=$this->doc->header($LANG->getLL("title"));
             $this->content.=$this->doc->spacer(5);
-            $this->content.=$this->doc->section("",$this->doc->funcMenu($headerSection,t3lib_BEfunc::getFuncMenu($this->id,"SET[function]",$this->MOD_SETTINGS["function"],$this->MOD_MENU["function"])));
+            $this->content.=$this->doc->section("",$this->doc->funcMenu($headerSection, BackendUtility::getFuncMenu($this->id,"SET[function]",$this->MOD_SETTINGS["function"],$this->MOD_MENU["function"])));
             $this->content.=$this->doc->divider(5);
 
 
@@ -114,7 +116,7 @@ class tx_ter_module1 extends t3lib_SCbase {
         } else {
                 // If no access or if ID == zero
 
-            $this->doc = t3lib_div::makeInstance("mediumDoc");
+            $this->doc = GeneralUtility::makeInstance("mediumDoc");
             $this->doc->backPath = $BACK_PATH;
 
             $this->content.=$this->doc->startPage($LANG->getLL("title"));
@@ -149,7 +151,7 @@ class tx_ter_module1 extends t3lib_SCbase {
 }
 
 	// Make instance:
-$SOBE = t3lib_div::makeInstance("tx_ter_module1");
+$SOBE = GeneralUtility::makeInstance("tx_ter_module1");
 $SOBE->init();
 
 // 	Include files?

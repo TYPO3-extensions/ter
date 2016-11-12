@@ -25,12 +25,14 @@
 ***************************************************************/
 /**
  * (Re-)builds the extension index (extensions.xml.gz) if neccessary.
- * Use this as a cron-job which is scheduled every minute or so ... 
+ * Use this as a cron-job which is scheduled every minute or so ...
  *
  * $Id$
  *
  * @author	Robert Lemke <robert@typo3.org>
  */
+
+use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 
 	// Defining circumstances for CLI mode:
 define('TYPO3_cliMode', TRUE);
@@ -43,7 +45,7 @@ define('PATH_thisScript',$_SERVER['SCRIPT_FILENAME']);
 require(dirname(PATH_thisScript).'/conf.php');
 require(dirname(PATH_thisScript).'/'.$BACK_PATH.'init.php');
 
-require_once t3lib_extMgm::extPath('ter').'class.tx_ter_helper.php'; 
+require_once ExtensionManagementUtility::extPath('ter').'class.tx_ter_helper.php';
 
 /**
  * Dummy class which exists only because the tx_ter_helper class expects a
@@ -51,23 +53,23 @@ require_once t3lib_extMgm::extPath('ter').'class.tx_ter_helper.php';
  * is the only content of this object.
  */
 class tx_ter_buildextensionindex {
-	
+
 	public		$repositoryDir;
 
 	/**
 	 * Initializes our little class
 	 *
-	 * @result	void 
+	 * @result	void
 	 * @access	protected
 	 */
 	public function __construct() {
 		$staticConfArr = unserialize ($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['ter']);
-		if (is_array ($staticConfArr)) {			
+		if (is_array ($staticConfArr)) {
 			$this->repositoryDir = $staticConfArr['repositoryDir'];
 			if (substr ($this->repositoryDir, -1, 1) != '/') $this->repositoryDir .= '/';
 		}
 	}
-	
+
 }
 
 $pluginObj = new tx_ter_buildextensionindex();

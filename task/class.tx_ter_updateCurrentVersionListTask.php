@@ -12,6 +12,8 @@
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+
 /**
  * Update json file with information of core versions
  *
@@ -38,9 +40,9 @@ class tx_ter_updateCurrentVersionListTask extends tx_scheduler_Task {
 	protected function fetchCurrentCoreData() {
 		$result = FALSE;
 		$targetFile = PATH_site . $GLOBALS['TYPO3_CONF_VARS']['BE']['fileadminDir'] . 'currentcoredata.json';
-		$sourceData = t3lib_div::getUrl('http://get.typo3.org/json');
+		$sourceData = GeneralUtility::getUrl('http://get.typo3.org/json');
 		if (json_decode($sourceData, TRUE) !== NULL) {
-			$result = t3lib_div::writeFile($targetFile, $sourceData);
+			$result = GeneralUtility::writeFile($targetFile, $sourceData);
 		}
 
 		return $result;
@@ -52,9 +54,9 @@ class tx_ter_updateCurrentVersionListTask extends tx_scheduler_Task {
 	protected function fetchCurrentDocumentationData() {
 		$result = FALSE;
 		$targetFile = PATH_site . $GLOBALS['TYPO3_CONF_VARS']['BE']['fileadminDir'] . 'currentdocumentationdata.json';
-		$sourceData = t3lib_div::getUrl('https://docs.typo3.org/typo3cms/extensions/manuals.json');
+		$sourceData = GeneralUtility::getUrl('https://docs.typo3.org/typo3cms/extensions/manuals.json');
 		if (json_decode($sourceData, TRUE) !== NULL) {
-			$result = t3lib_div::writeFile($targetFile, $sourceData);
+			$result = GeneralUtility::writeFile($targetFile, $sourceData);
 		}
 
 		return $result;

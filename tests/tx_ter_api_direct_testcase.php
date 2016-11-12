@@ -12,7 +12,7 @@
  * The TYPO3 project - inspiring people to share!
  */
 
-require_once (t3lib_extMgm::extPath('ter').'class.tx_ter_api.php');
+require_once (\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('ter').'class.tx_ter_api.php');
 
 /**
  * Test case for checking the TER 2.0 API directly
@@ -64,8 +64,7 @@ class tx_ter_api_direct_testcase extends tx_t3unit_testcase {
 
 		    // Create a sys_page for TSFE
 		if(!is_object($TSFE->sys_page)) {
-			require_once (PATH_t3lib.'class.t3lib_page.php');
-			$TSFE->sys_page = t3lib_div::makeInstance('t3lib_pageSelect');
+			$TSFE->sys_page = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Frontend\Page\PageRepository::class);
 			$TSFE->sys_page->init(true);
 		}
 
@@ -83,7 +82,7 @@ class tx_ter_api_direct_testcase extends tx_t3unit_testcase {
 		$pObject->extensionsPID = $this->pid;
 
 			// Create api class
-		$class = t3lib_div::makeInstanceClassName('tx_ter_api');
+		$class = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('tx_ter_api');
 		$this->api = new $class($pObject);
 	}
 

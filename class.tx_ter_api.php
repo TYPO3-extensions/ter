@@ -16,7 +16,11 @@
  *
  * @author    Robert Lemke <robert@typo3.org>
  */
-require_once(t3lib_extMgm::extPath('ter') . 'class.tx_ter_helper.php');
+
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
+
+require_once(ExtensionManagementUtility::extPath('ter') . 'class.tx_ter_helper.php');
 
 /**
  * TYPO3 Extension Repository, SOAP Server
@@ -38,12 +42,12 @@ class tx_ter_api {
 	protected $parentObj;
 
 	/**
-	 * @var tslib_cObj
+	 * @var \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer
 	 */
 	protected $cObj;
 
 	/**
-	 * @var t3lib_TCEmain
+	 * @var \TYPO3\CMS\Core\DataHandling\DataHandler
 	 */
 	protected $tce;
 
@@ -121,7 +125,7 @@ class tx_ter_api {
 		}
 		$extensionKey = strtolower($extensionInfoData->extensionKey);
 		if (TYPO3_DLOG) {
-			t3lib_div::devLog(
+			GeneralUtility::devLog(
 				'tx_ter_api->uploadExtension()',
 				'ter',
 				0,
@@ -184,7 +188,7 @@ class tx_ter_api {
 	 * @return void
 	 */
 	protected static function notifyExtensionVersionUpload($extensionInfoData) {
-		$objectManager = t3lib_div::makeInstance('Tx_Extbase_Object_ObjectManager');
+		$objectManager = GeneralUtility::makeInstance('Tx_Extbase_Object_ObjectManager');
 		/** @var Tx_Amqp_Service_ProducerService $producerService */
 		$producerService = $objectManager->get('Tx_Amqp_Service_ProducerService');
 
@@ -209,12 +213,12 @@ class tx_ter_api {
 		// Make an instance of the api
 		$extConf = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['ter']);
 		$dummyParentObject = (object) array(
-			'cObj' => t3lib_div::makeInstance('tslib_cObj'),
+			'cObj' => GeneralUtility::makeInstance('tslib_cObj'),
 			'extensionsPID' => $GLOBALS['TSFE']->tmpl->setup['plugin.']['tx_ter_pi1.']['pid'],
 			'repositoryDir' => $extConf['repositoryDir'],
 			'conf' => $GLOBALS['TSFE']->tmpl->setup['plugin.']['tx_ter_pi1.'],
 		);
-		$instance = t3lib_div::makeInstance('tx_ter_api', $dummyParentObject);
+		$instance = GeneralUtility::makeInstance('tx_ter_api', $dummyParentObject);
 		$accountData = (object) array('username' => $username);
 		// Load extension
 		$extensionKeyRecordArr = $instance->helperObj->getExtensionKeyRecord(strtolower($extensionInfoData->extensionKey));
@@ -267,7 +271,7 @@ class tx_ter_api {
 	 */
 	public function deleteExtension($accountData, $extensionKey, $version) {
 		if (TYPO3_DLOG) {
-			t3lib_div::devLog(
+			GeneralUtility::devLog(
 				'tx_ter_api->deleteExtension()',
 				'ter',
 				0,
@@ -358,7 +362,7 @@ class tx_ter_api {
 	 * @return mixed
 	 */
 	protected function notifyExtensionKeyRegistration($registerExtensionKeyData) {
-		$objectManager = t3lib_div::makeInstance('Tx_Extbase_Object_ObjectManager');
+		$objectManager = GeneralUtility::makeInstance('Tx_Extbase_Object_ObjectManager');
 		/** @var Tx_Amqp_Service_ProducerService $producerService */
 		$producerService = $objectManager->get('Tx_Amqp_Service_ProducerService');
 
@@ -483,7 +487,7 @@ class tx_ter_api {
 	 * @return mixed
 	 */
 	protected function notifyExtensionKeyDelete($extensionKey) {
-		$objectManager = t3lib_div::makeInstance('Tx_Extbase_Object_ObjectManager');
+		$objectManager = GeneralUtility::makeInstance('Tx_Extbase_Object_ObjectManager');
 		/** @var Tx_Amqp_Service_ProducerService $producerService */
 		$producerService = $objectManager->get('Tx_Amqp_Service_ProducerService');
 
@@ -547,7 +551,7 @@ class tx_ter_api {
 				TX_TER_ERROR_SETREVIEWSTATE_NOUSERGROUPDEFINED
 			);
 		}
-		if (!t3lib_div::inList($userRecordArr['usergroup'], $reviewersFrontendUsergroupUid)) {
+		if (!GeneralUtility::inList($userRecordArr['usergroup'], $reviewersFrontendUsergroupUid)) {
 			throw new tx_ter_exception_unauthorized('Access denied.', TX_TER_ERROR_SETREVIEWSTATE_ACCESSDENIED);
 		}
 
@@ -577,17 +581,17 @@ class tx_ter_api {
 	public function increaseExtensionDownloadCounters($accountData, $extensionVersionsAndIncrementors) {
 		$errorMessages = array();
 
-		t3lib_div::devLog('DownloadCounter: Trying to increase extension download counters - user "' . $accountData->username . '" connected from IP "' . t3lib_div::getIndpEnv('REMOTE_ADDR') . '" - number of results: ' . count($extensionVersionsAndIncrementors->extensionVersionAndIncrementor), 'tx_ter_api', 0);
+		GeneralUtility::devLog('DownloadCounter: Trying to increase extension download counters - user "' . $accountData->username . '" connected from IP "' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '" - number of results: ' . count($extensionVersionsAndIncrementors->extensionVersionAndIncrementor), 'tx_ter_api', 0);
 
 		$userRecordArr = $this->helperObj->getValidUser($accountData);
 		$mirrorsFrontendUsergroupUid = (int) $this->parentObj->conf['mirrorsFrontendUsergroupUid'];
 
 		if ($mirrorsFrontendUsergroupUid == 0) {
-			t3lib_div::devLog('DownloadCounter: No usergroup for mirrors has been defined on the server side. Aborting ...', 'tx_ter_api', 3);
+			GeneralUtility::devLog('DownloadCounter: No usergroup for mirrors has been defined on the server side. Aborting ...', 'tx_ter_api', 3);
 			throw new tx_ter_exception_internalServerError('Warning: No usergroup for mirrors has been defined on the server side. Aborting ...', TX_TER_ERROR_INCREASEEXTENSIONDOWNLOADCOUNTER_NOUSERGROUPDEFINED);
 		}
-		if (!t3lib_div::inList($userRecordArr['usergroup'], $mirrorsFrontendUsergroupUid)) {
-			t3lib_div::devLog('DownloadCounter: Access denied for user ' . $accountData->username, 'tx_ter_api', 3, $userRecordArr);
+		if (!GeneralUtility::inList($userRecordArr['usergroup'], $mirrorsFrontendUsergroupUid)) {
+			GeneralUtility::devLog('DownloadCounter: Access denied for user ' . $accountData->username, 'tx_ter_api', 3, $userRecordArr);
 			throw new tx_ter_exception_unauthorized('Access denied.', TX_TER_ERROR_INCREASEEXTENSIONDOWNLOADCOUNTER_ACCESSDENIED);
 		}
 
@@ -611,19 +615,19 @@ class tx_ter_api {
 			}
 		}
 
-		t3lib_div::devLog('DownloadCounter: Increased download counter for ' . $counter . ' extensions. User "' . $accountData->username . '".', 'tx_ter_api', 0);
+		GeneralUtility::devLog('DownloadCounter: Increased download counter for ' . $counter . ' extensions. User "' . $accountData->username . '".', 'tx_ter_api', 0);
 		// Update extension index file
 		$this->helperObj->requestUpdateOfExtensionIndexFile();
 
 		// Return results including list of error messages if any
 		if (!empty($errorMessages)) {
-			t3lib_div::devLog('DownloadCounter: Errors occured for user "' . $accountData->username . '".', 'tx_ter_api', 2, $errorMessages);
+			GeneralUtility::devLog('DownloadCounter: Errors occured for user "' . $accountData->username . '".', 'tx_ter_api', 2, $errorMessages);
 			$result = array(
 				'resultCode' => TX_TER_RESULT_ERRORS_OCCURRED,
 				'resultMessages' => $errorMessages
 			);
 		} else {
-			t3lib_div::devLog('DownloadCounter: Everything OK. User "' . $accountData->username . '".', 'tx_ter_api', -1);
+			GeneralUtility::devLog('DownloadCounter: Everything OK. User "' . $accountData->username . '".', 'tx_ter_api', -1);
 			$result = array(
 				'resultCode' => TX_TER_RESULT_GENERAL_OK,
 				'resultMessages' => array()
@@ -768,7 +772,7 @@ class tx_ter_api {
 			mkdir($this->parentObj->repositoryDir . $firstLetter . '/' . $secondLetter);
 		}
 
-		list($majorVersion, $minorVersion, $devVersion) = t3lib_div::intExplode('.', $extensionInfoData->version);
+		list($majorVersion, $minorVersion, $devVersion) = GeneralUtility::intExplode('.', $extensionInfoData->version);
 		$t3xFileName = $extensionKey . '_' . $majorVersion . '.' . $minorVersion . '.' . $devVersion . '.t3x';
 
 		// Write the files
@@ -1025,7 +1029,7 @@ class tx_ter_api {
 		$secondLetter = strtolower(substr($extensionKey, 1, 1));
 		$fullPath = $this->parentObj->repositoryDir . $firstLetter . '/' . $secondLetter . '/';
 
-		list ($majorVersion, $minorVersion, $devVersion) = t3lib_div::intExplode('.', $version);
+		list ($majorVersion, $minorVersion, $devVersion) = GeneralUtility::intExplode('.', $version);
 		$fullPath .= strtolower($extensionKey) . '_' . $majorVersion . '.' . $minorVersion . '.' . $devVersion;
 
 		$filesToDelete = array(
@@ -1069,7 +1073,7 @@ class tx_ter_api {
 	 */
 	protected function checkExtensionDependencyOnSupportedTypo3Version($extensionInfoData) {
 		$result = TX_TER_ERROR_UPLOADEXTENSION_TYPO3DEPENDENCYCHECKFAILED;
-		$coreVersionData = t3lib_div::getUrl(PATH_site . $GLOBALS['TYPO3_CONF_VARS']['BE']['fileadminDir'] . 'currentcoredata.json');
+		$coreVersionData = GeneralUtility::getUrl(PATH_site . $GLOBALS['TYPO3_CONF_VARS']['BE']['fileadminDir'] . 'currentcoredata.json');
 		$currentCores = json_decode($coreVersionData, TRUE);
 		if ($currentCores !== NULL) {
 			$result = TX_TER_ERROR_UPLOADEXTENSION_TYPO3DEPENDENCYINCORRECT;
@@ -1130,7 +1134,7 @@ class tx_ter_api {
 						}
 					}
 				}
-				list($lower, $upper) = t3lib_div::trimExplode('-', $typo3Range);
+				list($lower, $upper) = GeneralUtility::trimExplode('-', $typo3Range);
 				$lower = trim($lower);
 				$upper = trim($upper);
 				if (empty($lower) || empty($upper)) {
@@ -1198,7 +1202,7 @@ class tx_ter_api {
 		// Bad prefixes:
 		$badPrefixesArr = array('tx', 'user_', 'pages', 'tt_', 'sys_', 'ts_language_', 'csh_');
 		foreach ($badPrefixesArr as $prefix) {
-			if (t3lib_div::isFirstPartOfStr($extensionKey, $prefix)) {
+			if (GeneralUtility::isFirstPartOfStr($extensionKey, $prefix)) {
 				$validKey = FALSE;
 				break;
 			}
@@ -1477,7 +1481,7 @@ class tx_ter_api {
 	 * @return void
 	 */
 	public function loadTceForm() {
-		$this->tce = t3lib_div::makeInstance('t3lib_TCEmain');
+		$this->tce = GeneralUtility::makeInstance(\TYPO3\CMS\Core\DataHandling\DataHandler::class);
 		$this->tce->stripslashes_values = 0;
 		$this->tce->workspace = 0;
 		$this->tce->bypassWorkspaceRestrictions = TRUE;

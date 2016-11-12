@@ -38,6 +38,8 @@
  *
  */
 
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+
 	// Make sure that we are executed only in TYPO3 context
 if (!defined ('TYPO3_MODE')) die ('Access denied.');
 
@@ -150,7 +152,7 @@ class tx_ter_helper {
 			throw new tx_ter_exception_unauthorized ('The specified user does not exist.', TX_TER_ERROR_GENERAL_USERNOTFOUND);
 		}
 
-		$row['admin'] = (intval($this->pluginObj->conf['adminFrontendUsergroupUid']) && t3lib_div::inList($row['usergroup'], $this->pluginObj->conf['adminFrontendUsergroupUid']));
+		$row['admin'] = (intval($this->pluginObj->conf['adminFrontendUsergroupUid']) && GeneralUtility::inList($row['usergroup'], $this->pluginObj->conf['adminFrontendUsergroupUid']));
 
 		return $row;
 	}
@@ -281,7 +283,7 @@ class tx_ter_helper {
 	 * @access	public
 	 */
 	public function requestUpdateOfExtensionIndexFile() {
-		t3lib_div::writeFile (
+		GeneralUtility::writeFile (
 			$this->pluginObj->repositoryDir.'extensions.xml.gz.needsupdate',
 			'Dear cron-job. The extensions.xml.gz file needs to be regenerated, please do so as soon as you find the time for it.'.chr(10).
 			'Thanks, your TER helper class'
@@ -298,7 +300,7 @@ class tx_ter_helper {
 	public function writeExtensionIndexfile()	{
 		global $TYPO3_DB;
 
-		t3lib_div::devLog	('writing extension index!', 'tx_ter_helper', 0);
+		GeneralUtility::devLog	('writing extension index!', 'tx_ter_helper', 0);
 		if (!@is_dir ($this->pluginObj->repositoryDir)) throw new tx_ter_exception_internalServerError ('Extension repository directory does not exist.', TX_TER_ERROR_GENERAL_EXTREPDIRDOESNTEXIST);
 
 		$trackTime = microtime();
@@ -374,13 +376,13 @@ class tx_ter_helper {
 		fclose ($fh);
 
 		if (!@filesize($this->pluginObj->repositoryDir.'new-extensions.xml.gz') > 0) {
-			t3lib_div::devLog	('Newly created extension index is zero bytes!', 'tx_ter_helper', 0);
+			GeneralUtility::devLog	('Newly created extension index is zero bytes!', 'tx_ter_helper', 0);
 			throw new tx_ter_exception_internalServerError ('Write error while writing extensions index file (zero bytes): '.$this->pluginObj->repositoryDir.'extensions.xml', TX_TER_ERROR_UPLOADEXTENSION_WRITEERRORWHILEWRITINGEXTENSIONSINDEX);
 		}
 
 		@unlink ($this->pluginObj->repositoryDir.'extensions.xml.gz');
 		rename ($this->pluginObj->repositoryDir.'new-extensions.xml.gz', $this->pluginObj->repositoryDir.'extensions.xml.gz');
-		t3lib_div::writeFile ($this->pluginObj->repositoryDir.'extensions.md5', md5_file ($this->pluginObj->repositoryDir.'extensions.xml.gz'));
+		GeneralUtility::writeFile ($this->pluginObj->repositoryDir.'extensions.md5', md5_file ($this->pluginObj->repositoryDir.'extensions.xml.gz'));
 
 
 			// Write serialized array file to disk:
@@ -390,7 +392,7 @@ class tx_ter_helper {
 		fclose ($fh);
 
 		if (!@filesize($this->pluginObj->repositoryDir.'new-extensions.bin') > 0) {
-			t3lib_div::devLog	('Newly created extension index is zero bytes!', 'tx_ter_helper', 0);
+			GeneralUtility::devLog	('Newly created extension index is zero bytes!', 'tx_ter_helper', 0);
 			throw new tx_ter_exception_internalServerError ('Write error while writing extensions index file (zero bytes): '.$this->pluginObj->repositoryDir.'extensions.bin', TX_TER_ERROR_UPLOADEXTENSION_WRITEERRORWHILEWRITINGEXTENSIONSINDEX);
 		}
 
@@ -426,7 +428,7 @@ class tx_ter_helper {
 			return;
 		}
 
-		$GLOBALS['BE_USER'] = t3lib_div::makeInstance('t3lib_tsfeBeUserAuth');
+		$GLOBALS['BE_USER'] = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\FrontendBackendUserAuthentication::class);
 		$GLOBALS['BE_USER']->dontSetCookie = TRUE;
 		$GLOBALS['BE_USER']->start();
 		$GLOBALS['BE_USER']->user = array(
@@ -448,7 +450,7 @@ class tx_ter_helper {
 			return;
 		}
 
-		$GLOBALS['LANG'] = t3lib_div::makeInstance('language');
+		$GLOBALS['LANG'] = GeneralUtility::makeInstance('language');
 		$GLOBALS['LANG']->init($lang);
 	}
 }

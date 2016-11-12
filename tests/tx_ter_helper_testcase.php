@@ -17,7 +17,7 @@
  *
  */
 
-require_once (t3lib_extMgm::extPath('ter').'class.tx_ter_helper.php');
+require_once (\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('ter').'class.tx_ter_helper.php');
 
 class tx_ter_helper_testcase extends tx_t3unit_testcase {
 
@@ -48,8 +48,7 @@ class tx_ter_helper_testcase extends tx_t3unit_testcase {
 
 		    // Create a sys_page for TSFE
 		if(!is_object($TSFE->sys_page)) {
-			require_once (PATH_t3lib.'class.t3lib_page.php');
-			$TSFE->sys_page = t3lib_div::makeInstance('t3lib_pageSelect');
+			$TSFE->sys_page = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Frontend\Page\PageRepository::class);
 			$TSFE->sys_page->init(true);
 		}
 
@@ -58,7 +57,7 @@ class tx_ter_helper_testcase extends tx_t3unit_testcase {
 	    $piObject->extensionsPID = $this->pid;
 
 		    // Create helper class
-	    $class = t3lib_div::makeInstanceClassName('tx_ter_helper');
+	    $class = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstanceClassName('tx_ter_helper');
 	    $this->helper = new $class($piObject);
 
 	}
